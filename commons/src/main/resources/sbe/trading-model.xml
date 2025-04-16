@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sbe:messageSchema xmlns:sbe="http://fixprotocol.io/2020/sbe"
+                   package="play.lab.model.sbe"
+                   semanticVersion="1.0"
+                   version="1"
+                   id="1">
+    <types>
+        <composite name="messageHeader">
+            <type name="blockLength" primitiveType="uint16"/>
+            <type name="templateId" primitiveType="uint16"/>
+            <type name="schemaId" primitiveType="uint16"/>
+            <type name="version" primitiveType="uint16"/>
+        </composite>
+        <type name="string64" primitiveType="char" length="64"/>
+    </types>
+    <message name="Heartbeat" id="1">
+        <field name="appId" id="1" type="uint32"/>
+        <field name="timestamp" id="2" type="uint64"/>
+    </message>
+    <message name="Quote" id="2">
+        <sequence name="bids" dimensionType="uint32" lengthType="uint32">
+            <type name="float64"/>
+        </sequence>
+        <sequence name="asks" dimensionType="uint32" lengthType="uint32">
+            <type name="float64"/>
+        </sequence>
+        <sequence name="volume" dimensionType="uint32" lengthType="uint32">
+            <type name="float64"/>
+        </sequence>
+
+        <field name="symbol" id="1" type="uint32"/>
+        <field name="priceCreationTimestamp" id="2" type="uint64"/>
+        <field name="tenor" id="3" type="uint32"/>
+        <field name="valueDate" id="4" type="uint64"/>
+        <field name="clientTier" id="5" type="uint32"/>
+    </message>
+</sbe:messageSchema>
