@@ -1,0 +1,78 @@
+target
+GTAGS
+GRTAGS
+GPATH
+prop
+out/
+classes/
+bin/
+
+# OS X
+.DS_Store
+
+# eclipse
+.project
+.classpath
+.settings
+
+# intellij
+*.iml
+*.ipr
+*.iws
+.idea/
+.run/
+
+# editors
+*.sublime-project
+*.sublime-workspace
+*~
+
+# the build
+build-local.properties
+.gradle/
+build*
+!buildSrc/
+cmake-build-debug/
+cmake-build-release/
+cmake-build-debug-*/
+cmake-build-release-*/
+
+# cpp build linux
+cppbuild/CMakeCache.txt
+cppbuild/CMakeFiles/
+cppbuild/CTestTestfile.cmake
+cppbuild/Makefile
+cppbuild/Testing/
+cppbuild/aeron-common/
+cppbuild/aeron-samples/
+cppbuild/binaries/
+cppbuild/cmake_install.cmake
+cppbuild/cmake/
+cppbuild/cmake*/
+
+# cpp build windows
+cppbuild/*.opensdf
+cppbuild/*.sdf
+cppbuild/*.sln
+cppbuild/*.suo
+cppbuild/*.vcxproj
+cppbuild/*.filters
+cppbuild/*.lastbuildstate
+cppbuild/*.tlog
+cppbuild/*.log
+cppbuild/*.cache
+cppbuild/Debug
+cppbuild/Release
+cppbuild/RelWithDebInfo
+cppbuild/Win32
+
+# JVM crash reports
+hs_err_pid*
+*.hprof
+
+# Archive and Cluster data from system tests
+/aeron-cluster/aeron-archive/
+/aeron-cluster/aeron-cluster/
+
+aeron-samples/scripts/cluster/logs/
+aeron-samples/scripts/cluster/node*/
