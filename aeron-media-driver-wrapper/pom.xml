@@ -16,6 +16,7 @@
         <dependency>
             <groupId>io.aeron</groupId>
             <artifactId>aeron-all</artifactId>
+            <version>1.46.6</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
