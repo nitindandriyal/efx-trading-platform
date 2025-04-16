@@ -1,4 +1,4 @@
-# eFX Trading Platform
+# FX Trading Platform
 
 A modular, real-time FX trading platform built with Java, Spring Boot, and Vaadin.  
 It supports tiered pricing, latency smoothing, and customizable risk controls — ideal for simulating and deploying institutional-grade FX pricing engines.
