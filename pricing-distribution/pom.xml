@@ -6,7 +6,7 @@
 
     <parent>
         <groupId>pub.lab.trading</groupId>
-        <artifactId>efx-trading-engine</artifactId>
+        <artifactId>fx-trading-platform</artifactId>
         <version>1.0-SNAPSHOT</version>
     </parent>
 
