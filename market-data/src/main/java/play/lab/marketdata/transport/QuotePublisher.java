@@ -6,6 +6,7 @@ import org.agrona.concurrent.UnsafeBuffer;
 import play.lab.FxPriceGenerator;
 import play.lab.marketdata.model.MarketDataTick;
 import play.lab.model.sbe.MessageHeaderEncoder;
+import pub.lab.trading.AeronConfigs;
 import pub.lab.trading.model.ClientTierLevel;
 import pub.lab.trading.model.Tenor;
 import pub.lab.trading.model.pricing.QuoteWriter;
@@ -19,7 +20,7 @@ public class QuotePublisher {
     private final Publication quotePub;
 
     public QuotePublisher() {
-        String aeronDir = System.getProperty("aeron.base.path") + "/trading";
+        String aeronDir = System.getProperty("aeron.base.path") + AeronConfigs.LIVE_DIR;
         // 1. Start Aeron
         Aeron aeron = Aeron.connect(new Aeron.Context().aeronDirectoryName(aeronDir));
 
