@@ -8,8 +8,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
 @Theme(variant = Lumo.DARK)
-public class VaadinAppLauncher implements AppShellConfigurator {
+public class MarketDataAppLauncher implements AppShellConfigurator {
     public static void main(String[] args) {
-        SpringApplication.run(VaadinAppLauncher.class, args);
+        SpringApplication.run(MarketDataAppLauncher.class, args);
     }
 }
