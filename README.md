@@ -54,4 +54,52 @@ mvn spring-boot:run
 ```
 ![image](https://github.com/user-attachments/assets/7c120d5c-aa26-4af2-9a86-fd64c9d24d90)
 
+## Architecture Diagram
 
+Below is the architecture diagram of the FX Trading Platform, illustrating the interaction between the client, backend services, external APIs, and database.
+
+```mermaid
+graph TD
+    %% Client Layer
+    A[Client <br> (Web Browser / Mobile App)] -->|REST API| B[API Gateway <br> (Spring Boot)]
+    A -->|WebSocket| B
+
+    %% Backend Services
+    B --> C[Market Data Service]
+    B --> D[Trade Execution Service]
+    B --> E[User Management Service]
+    B --> F[Portfolio Management Service]
+    B --> G[Risk Management Service]
+
+    %% External API
+    C -->|HTTP| H[Alpha Vantage API <br> (Market Data)]
+
+    %% Database
+    D --> I[PostgreSQL <br> (Users, Trades, Portfolio)]
+    E --> I
+    F --> I
+    G --> I
+
+    %% Service Interactions
+    D --> F
+    D --> G
+    F --> G
+
+    %% Deployment
+    subgraph Docker Containers
+        B
+        C
+        D
+        E
+        F
+        G
+        I
+    end
+
+    %% Annotations
+    classDef external fill:#f9f,stroke:#333,stroke-width:2px;
+    class H external;
+    classDef client fill:#bbf,stroke:#333,stroke-width:2px;
+    class A client;
+    classDef db fill:#bfb,stroke:#333,stroke-width:2px;
+    class I db;
