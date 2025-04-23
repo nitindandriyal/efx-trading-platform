@@ -31,7 +31,7 @@ The platform is structured into the following Maven modules:
 
 ### Prerequisites
 
-- Java 17 or later
+- Java 21 or later
 - Maven 3.6+
 
 ### Build & Run
