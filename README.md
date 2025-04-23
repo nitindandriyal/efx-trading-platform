@@ -11,8 +11,10 @@ It supports tiered pricing, latency smoothing, and customizable risk controls �
 - **Latency Smoothing** – Protect against latency arbitrage by smoothing quote updates.
 - **Quote Throttling** – Control the frequency of quote updates to manage system load.
 - **Vaadin UI** – Interactive frontend for monitoring and adjusting pricing parameters.
-- **Spring Boot Backend** – Robust backend services for market data ingestion and pricing logic.
+- **Aeron/SBE Backend** – Robust backend services for market data ingestion and pricing, execution at high speeds/low latencies.
+- **Single Threaded Processes**
 - **Extensible Architecture** – Modular design for integrating OMS, analytics, and execution.
+- **TODO** - Stress Tests, Benchmarks, Metrics, Failover
 
 ---
 
