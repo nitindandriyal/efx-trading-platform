@@ -56,7 +56,7 @@ mvn spring-boot:run
 
 ## Architecture Diagram
 
-Below is the architecture diagram of the FX Trading Platform, illustrating the interaction between the client, backend services, external APIs, and database.
+Below is the architecture diagram of the FX Trading Platform, illustrating the interaction between the processes.
 
 ```mermaid
 graph TD
