@@ -62,12 +62,12 @@ Below is the architecture diagram of the FX Trading Platform, illustrating the i
 graph TD
 
     %% Backend Services
-    B --> C[Market Data Service]
-    B --> D[Aeron Media Driver]
-    B --> E[Pricing Engine]
-    B --> F[Quoting Engine]
-    B --> G[Pricing Adapter]
-    B --> H[Config Service]
+    C[Market Data Service]
+    D[Aeron Media Driver]
+    E[Pricing Engine]
+    F[Quoting Engine]
+    G[Pricing Adapter]
+    H[Config Service]
 
     %% Service Interactions
     C --> D
