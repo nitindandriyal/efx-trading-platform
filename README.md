@@ -63,26 +63,18 @@ graph TD
 
     %% Backend Services
     B --> C[Market Data Service]
-    B --> D[Trade Execution Service]
-    B --> E[User Management Service]
-    B --> F[Portfolio Management Service]
-    B --> G[Risk Management Service]
+    B --> D[Aeron Media Driver]
+    B --> E[Pricing Engine]
+    B --> F[Quoting Engine]
+    B --> G[Pricing Adapter]
+    B --> H[Config Service]
 
     %% Service Interactions
-    D --> F
-    D --> G
-    F --> G
-
-    %% Deployment
-    subgraph Docker Containers
-        B
-        C
-        D
-        E
-        F
-        G
-        I
-    end
+    C --> D
+    E --> D
+    F --> D
+    G --> D
+    H --> D
 
     %% Annotations
     classDef external fill:#f9f,stroke:#333,stroke-width:2px
