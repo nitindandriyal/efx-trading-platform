@@ -75,12 +75,12 @@ graph TD
     F --> D
     G --> D
     H --> D
+    D --> C
+    D --> E
+    D --> F
+    D --> G
+    D --> H
 
     %% Annotations
     classDef external fill:#f9f,stroke:#333,stroke-width:2px
-    class H external
-    classDef client fill:#bbf,stroke:#333,stroke-width:2px
-    class A client
-    classDef db fill:#bfb,stroke:#333,stroke-width:2px
-    class I db
 
