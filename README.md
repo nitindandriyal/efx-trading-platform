@@ -60,9 +60,6 @@ Below is the architecture diagram of the FX Trading Platform, illustrating the i
 
 ```mermaid
 graph TD
-    %% Client Layer
-    A[Client Browser/App] -->|REST API| B[API Gateway Spring Boot]
-    A -->|WebSocket| B
 
     %% Backend Services
     B --> C[Market Data Service]
@@ -70,15 +67,6 @@ graph TD
     B --> E[User Management Service]
     B --> F[Portfolio Management Service]
     B --> G[Risk Management Service]
-
-    %% External API
-    C -->|HTTP| H[Alpha Vantage API]
-
-    %% Database
-    D --> I[PostgreSQL Database]
-    E --> I
-    F --> I
-    G --> I
 
     %% Service Interactions
     D --> F
