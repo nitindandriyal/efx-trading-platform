@@ -24,8 +24,10 @@ The platform is structured into the following Maven modules:
 
 - `market-data` – Handles market data feed ingestion and preprocessing.
 - `pricing-engine` – Core logic for quote construction and tiered pricing.
-- `ui` – Vaadin-based frontend for user interaction and simulation control.
-- `common` – Shared utilities, config models, and data objects.
+- `quoting-engine` – Layer between pricing and distribution, to optimize distribution streams fan-out.
+- `config-service` – Delivers config changes directly to all processes via aeron config messages, Vaadin-based frontend for managing configs in live env.
+- `commons` – Shared utilities, config models, and data objects.
+- `aeron-media-driver` – Independent media driver with arhciving enabled to store and retrieve the runtime configurations.
 
 ---
 
