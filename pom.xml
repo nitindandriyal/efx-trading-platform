@@ -36,7 +36,7 @@
             <dependency>
                 <groupId>io.aeron</groupId>
                 <artifactId>aeron-all</artifactId>
-                <version>1.46.6</version>
+                <version>1.47.4</version>
             </dependency>
             <dependency>
                 <groupId>net.openhft</groupId>

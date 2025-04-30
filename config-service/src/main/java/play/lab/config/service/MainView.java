@@ -17,7 +17,7 @@ import java.util.List;
 
 @Route("")
 public class MainView extends VerticalLayout {
-    private final AeronService aeronService = new AeronService();
+
     private final Grid<ClientTierFlyweight> grid = new Grid<>();
     private final NumberField tierIdField = new NumberField("Tier ID");
     private final TextField tierNameField = new TextField("Tier Name");
@@ -44,7 +44,7 @@ public class MainView extends VerticalLayout {
     @PostConstruct
     public void init() {
         try {
-            List<ClientTierFlyweight> tiers = aeronService.replayTiers();
+            List<ClientTierFlyweight> tiers = AeronService.INSTANCE.getCachedTiers();
             dataProvider.getItems().clear();
             dataProvider.getItems().addAll(tiers);
             dataProvider.refreshAll();
@@ -71,7 +71,7 @@ public class MainView extends VerticalLayout {
         grid.addColumn(ClientTierFlyweight::isAccessToCrosses).setHeader("Access to Crosses");
         grid.addColumn(ClientTierFlyweight::getCreditLimitUsd).setHeader("Credit Limit (USD)");
         grid.addColumn(ClientTierFlyweight::getTierPriority).setHeader("Tier Priority");
-        grid.setItems(aeronService.getCachedTiers());
+        grid.setItems(AeronService.INSTANCE.getCachedTiers());
         dataProvider = (ListDataProvider<ClientTierFlyweight>) grid.getDataProvider();
 
         // Configure form fields
@@ -125,16 +125,23 @@ public class MainView extends VerticalLayout {
             Notification.show("Tier name must be 64 characters or less", 3000, Notification.Position.MIDDLE);
             return;
         }
-        if (tierIdField.isEmpty() || markupBpsField.isEmpty() || spreadTighteningFactorField.isEmpty() ||
-                quoteThrottleMsField.isEmpty() || latencyProtectionMsField.isEmpty() || quoteExpiryMsField.isEmpty() ||
-                minNotionalField.isEmpty() || maxNotionalField.isEmpty() || pricePrecisionField.isEmpty() ||
-                creditLimitUsdField.isEmpty() || tierPriorityField.isEmpty()) {
+        if (tierIdField.isEmpty()
+                || markupBpsField.isEmpty()
+                || spreadTighteningFactorField.isEmpty()
+                || quoteThrottleMsField.isEmpty()
+                || latencyProtectionMsField.isEmpty()
+                || quoteExpiryMsField.isEmpty()
+                || minNotionalField.isEmpty()
+                || maxNotionalField.isEmpty()
+                || pricePrecisionField.isEmpty()
+                || creditLimitUsdField.isEmpty()
+                || tierPriorityField.isEmpty()) {
             Notification.show("All fields are required", 3000, Notification.Position.MIDDLE);
             return;
         }
 
         try {
-            aeronService.sendTier(
+            AeronService.INSTANCE.sendTier(
                     tierIdField.getValue().intValue(),
                     tierNameField.getValue(),
                     markupBpsField.getValue(),
@@ -151,7 +158,8 @@ public class MainView extends VerticalLayout {
                     creditLimitUsdField.getValue(),
                     tierPriorityField.getValue().byteValue()
             );
-            dataProvider.getItems().addAll(aeronService.getCachedTiers());
+            dataProvider.getItems().clear();
+            dataProvider.getItems().addAll(AeronService.INSTANCE.getCachedTiers());
             dataProvider.refreshAll();
             clearForm();
             Notification.show("Tier added: " + tierNameField.getValue());

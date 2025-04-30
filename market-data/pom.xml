@@ -39,7 +39,7 @@
         <dependency>
             <groupId>io.aeron</groupId>
             <artifactId>aeron-all</artifactId>
-            <version>1.44.1</version>
+            <version>1.47.4</version>
         </dependency>
         <dependency>
             <groupId>com.vaadin</groupId>

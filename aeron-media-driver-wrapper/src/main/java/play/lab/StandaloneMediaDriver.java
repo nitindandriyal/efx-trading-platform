@@ -5,7 +5,7 @@ import io.aeron.archive.ArchiveThreadingMode;
 import io.aeron.archive.ArchivingMediaDriver;
 import io.aeron.driver.MediaDriver;
 import io.aeron.driver.ThreadingMode;
-import org.agrona.concurrent.SigIntBarrier;
+import org.agrona.concurrent.ShutdownSignalBarrier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import pub.lab.trading.AeronConfigs;
@@ -38,11 +38,10 @@ public class StandaloneMediaDriver {
                 .replicationChannel("aeron:ipc?endpoint=archive-replication"); // IPC channel for archive replication
 
         LOGGER.info("🚀 Launching Aeron MediaDriver: {} ", aeronDir);
-
+        final ShutdownSignalBarrier barrier = new ShutdownSignalBarrier();
         try (ArchivingMediaDriver archive = ArchivingMediaDriver.launch(mediaDriverContext, archiveContext)) {
             LOGGER.info("📡 MediaDriver running. Ctrl+C to terminate...");
-            new SigIntBarrier().await();
-
+            barrier.await();
             LOGGER.info("🛑 Shutting down MediaDriver...");
 
             archive.close();

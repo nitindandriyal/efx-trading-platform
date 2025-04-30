@@ -3,7 +3,6 @@ package play.lab.marketdata.transport;
 import io.aeron.Aeron;
 import io.aeron.Publication;
 import org.agrona.concurrent.UnsafeBuffer;
-import play.lab.FxPriceGenerator;
 import play.lab.marketdata.model.MarketDataTick;
 import play.lab.model.sbe.MessageHeaderEncoder;
 import pub.lab.trading.AeronConfigs;

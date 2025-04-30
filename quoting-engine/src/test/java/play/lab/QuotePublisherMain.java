@@ -2,7 +2,7 @@ package play.lab;
 
 import io.aeron.Aeron;
 import io.aeron.Publication;
-import org.agrona.concurrent.SigIntBarrier;
+
 import org.agrona.concurrent.UnsafeBuffer;
 import play.lab.model.sbe.MessageHeaderEncoder;
 import pub.lab.trading.model.pricing.QuoteWriter;
@@ -28,7 +28,7 @@ public class QuotePublisherMain {
         UnsafeBuffer buffer = new UnsafeBuffer(ByteBuffer.allocateDirect(2048)); // Enough for full book
 
         // 4. Start loop
-        SigIntBarrier barrier = new SigIntBarrier();
+
         System.out.println("📡 Streaming quotes to Aeron IPC [stream=10] — Ctrl+C to stop");
 
         long lastSend = System.currentTimeMillis();

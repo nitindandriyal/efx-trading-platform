@@ -10,6 +10,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @Theme(variant = Lumo.DARK)
 public class ConfigServiceAppLauncher implements AppShellConfigurator {
     public static void main(String[] args) {
+        new Thread(AeronService.INSTANCE::loop).start();
         SpringApplication.run(ConfigServiceAppLauncher.class, args);
     }
 }
