@@ -24,6 +24,8 @@ public class Pricer {
     private final Subscription bondSubscription;
     private final ExecutorService executor;
     private volatile boolean running = true;
+    private static volatile int receivedFx = 0;
+    private static volatile int receivedBond = 0;
 
     public Pricer(Aeron aeron) {
         // Two Publications on the same channel, different stream IDs
@@ -42,14 +44,11 @@ public class Pricer {
             while (running) {
                 int fragments = fxSubscription.poll((buffer, offset, length, header) -> {
                     if(Quote.isQuote(buffer, offset)) {
+                        receivedFx++;
                         Quote quote = Quote.decode(buffer, offset);
-                        System.out.println("Received " + counter.incrementAndGet() + " FX quote: " + quote.getInstrument() +
-                                ", bid=" + quote.getBid() + ", ask=" + quote.getAsk() +
-                                ", timestamp=" + quote.getTimestamp());
                     }
                 }, 10);
                 idleStrategy.idle(fragments);
-
             }
         });
 
@@ -61,9 +60,7 @@ public class Pricer {
                 int fragments = bondSubscription.poll((buffer, offset, length, header) -> {
                     if(Quote.isQuote(buffer, offset)) {
                         Quote quote = Quote.decode(buffer, offset);
-                        System.out.println("Received " + counter.incrementAndGet() + " Bond quote: " + quote.getInstrument() +
-                                ", bid=" + quote.getBid() + ", ask=" + quote.getAsk() +
-                                ", timestamp=" + quote.getTimestamp());
+                        receivedBond++;
                     }
                 }, 10);
                 idleStrategy.idle(fragments);
@@ -79,8 +76,6 @@ public class Pricer {
         if (result < 0) {
             // Backpressure: shared log buffer full
             System.out.println("Backpressure on " + (isFx ? "FX" : "Bond") + " stream: " + result);
-        } else {
-            System.out.println("Published " + (isFx ? "FX" : "Bond") + " quote: " + quote.getInstrument());
         }
     }
 
@@ -101,19 +96,13 @@ public class Pricer {
             Quote fxQuote = new Quote("EUR/USD", 1.10, 1.11, System.currentTimeMillis());
             Quote bondQuote = new Quote("US-Treasury", 99.50, 99.60, System.currentTimeMillis());
             // Simulate contention
-            for (int i = 0; i < 10000; i++) {
+            for (int i = 0; i < 10_000_000; i++) {
                 pricer.publishQuote(fxQuote, true); // Flood FX stream
                 pricer.publishQuote(bondQuote, false); // Check for bond delay
-                System.out.println("index " + i);
             }
 
-            aeron.countersReader().forEach((id, typeId, keyBuffer, label) -> {
-
-                // inspect or log values
-                System.out.println(label);
-
-            });
-
+            System.out.println("Total received(Fx): " + receivedFx);
+            System.out.println("Total received(Bond): " + receivedBond);
             pricer.close();
             pricer.running = false;
         }
@@ -123,10 +112,11 @@ public class Pricer {
 
 class Quote {
     private static final int QUOTE_TEMPLATE_ID = 0x807;
-    private final String instrument;
-    private final double bid;
-    private final double ask;
-    private final long timestamp;
+    private CharSequence instrument;
+    private double bid;
+    private double ask;
+    private long timestamp;
+    private static final ThreadLocal<Quote> quoteThreadLocal = ThreadLocal.withInitial(() -> new Quote(null, 0.0, 0.0, 0L));
 
     public static boolean isQuote(DirectBuffer buffer, int offset) {
         return QUOTE_TEMPLATE_ID == buffer.getInt(offset);
@@ -151,7 +141,7 @@ class Quote {
         this.timestamp = timestamp;
     }
 
-    public String getInstrument() {
+    public CharSequence getInstrument() {
         return instrument;
     }
 
@@ -164,10 +154,11 @@ class Quote {
     }
 
     public static Quote decode(DirectBuffer buffer, int offset) {
-        String instrument = buffer.getStringAscii(offset + 4);
-        double bid = buffer.getDouble(offset + 104);
-        double ask = buffer.getDouble(offset + 112);
-        long timestamp = buffer.getLong(offset + 120);
-        return new Quote(instrument, bid, ask, timestamp);
+        Quote quote = quoteThreadLocal.get();
+        quote.instrument = buffer.getStringAscii(offset + 4);
+        quote.bid = buffer.getDouble(offset + 104);
+        quote.ask = buffer.getDouble(offset + 112);
+        quote.timestamp = buffer.getLong(offset + 120);
+        return quote;
     }
 }
