@@ -41,13 +41,15 @@ public class Pricer {
             AtomicInteger counter = new AtomicInteger();
             while (running) {
                 int fragments = fxSubscription.poll((buffer, offset, length, header) -> {
-
-                    Quote quote = Quote.decode(buffer, offset);
-                    System.out.println("Received " + counter.incrementAndGet() + " FX quote: " + quote.getInstrument() +
-                            ", bid=" + quote.getBid() + ", ask=" + quote.getAsk() +
-                            ", timestamp=" + quote.getTimestamp());
+                    if(Quote.isQuote(buffer, offset)) {
+                        Quote quote = Quote.decode(buffer, offset);
+                        System.out.println("Received " + counter.incrementAndGet() + " FX quote: " + quote.getInstrument() +
+                                ", bid=" + quote.getBid() + ", ask=" + quote.getAsk() +
+                                ", timestamp=" + quote.getTimestamp());
+                    }
                 }, 10);
                 idleStrategy.idle(fragments);
+
             }
         });
 
@@ -57,11 +59,12 @@ public class Pricer {
             AtomicInteger counter = new AtomicInteger();
             while (running) {
                 int fragments = bondSubscription.poll((buffer, offset, length, header) -> {
-                    Quote quote = Quote.decode(buffer, offset);
-
-                    System.out.println("Received " + counter.incrementAndGet() + " Bond quote: " + quote.getInstrument() +
-                            ", bid=" + quote.getBid() + ", ask=" + quote.getAsk() +
-                            ", timestamp=" + quote.getTimestamp());
+                    if(Quote.isQuote(buffer, offset)) {
+                        Quote quote = Quote.decode(buffer, offset);
+                        System.out.println("Received " + counter.incrementAndGet() + " Bond quote: " + quote.getInstrument() +
+                                ", bid=" + quote.getBid() + ", ask=" + quote.getAsk() +
+                                ", timestamp=" + quote.getTimestamp());
+                    }
                 }, 10);
                 idleStrategy.idle(fragments);
             }
@@ -119,10 +122,15 @@ public class Pricer {
 
 
 class Quote {
+    private static final int QUOTE_TEMPLATE_ID = 0x807;
     private final String instrument;
     private final double bid;
     private final double ask;
     private final long timestamp;
+
+    public static boolean isQuote(DirectBuffer buffer, int offset) {
+        return QUOTE_TEMPLATE_ID == buffer.getInt(offset);
+    }
 
     public double getBid() {
         return bid;
@@ -148,17 +156,18 @@ class Quote {
     }
 
     public void encode(UnsafeBuffer buffer) {
-        buffer.putStringAscii(0, instrument);
-        buffer.putDouble(100, bid);
-        buffer.putDouble(108, ask);
-        buffer.putLong(116, timestamp);
+        buffer.putInt(0, QUOTE_TEMPLATE_ID);
+        buffer.putStringAscii(4, instrument);
+        buffer.putDouble(104, bid);
+        buffer.putDouble(112, ask);
+        buffer.putLong(120, timestamp);
     }
 
     public static Quote decode(DirectBuffer buffer, int offset) {
-        String instrument = buffer.getStringAscii(offset);
-        double bid = buffer.getDouble(offset + 100);
-        double ask = buffer.getDouble(offset + 108);
-        long timestamp = buffer.getLong(offset + 116);
+        String instrument = buffer.getStringAscii(offset + 4);
+        double bid = buffer.getDouble(offset + 104);
+        double ask = buffer.getDouble(offset + 112);
+        long timestamp = buffer.getLong(offset + 120);
         return new Quote(instrument, bid, ask, timestamp);
     }
 }
