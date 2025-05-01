@@ -8,6 +8,7 @@ import io.aeron.archive.client.RecordingDescriptorConsumer;
 import io.aeron.archive.codecs.SourceLocation;
 import io.aeron.logbuffer.FragmentHandler;
 import org.agrona.MutableDirectBuffer;
+import org.agrona.collections.LongArrayList;
 import org.agrona.collections.MutableLong;
 import org.agrona.concurrent.IdleStrategy;
 import org.agrona.concurrent.NoOpIdleStrategy;
@@ -110,7 +111,7 @@ public enum AeronService {
         LOGGER.info("Sent tier: tierId={}, tierName={}", tierId, tierName);
     }
 
-    public List<ClientTierFlyweight> replayTiers() {
+    private List<ClientTierFlyweight> replayTiers() {
         synchronized (cache) {
             cache.clear();
         }
@@ -123,11 +124,7 @@ public enum AeronService {
         }
 
         int attempt = 1;
-        long length = archive.getMaxRecordedPosition(recordingId);
 
-        archive.startReplay(
-                recordingId, 0, length, REPLAY_CHANNEL, StreamId.CONFIG_STREAM.getCode()
-        );
         try (Subscription subscription = aeron.addSubscription(REPLAY_CHANNEL, StreamId.CONFIG_STREAM.getCode())) {
 
             LOGGER.info("Started replay for recordingId={} on {}:{} (attempt {}/{})",
@@ -135,19 +132,15 @@ public enum AeronService {
 
             FragmentHandler fragmentAssembler = (buffer1, offset, length1, header) -> {
                 try {
-                    LOGGER.debug("Received message: length={}, offset={}", length, offset);
+                    LOGGER.debug("Received message: length={}, offset={}", length1, offset);
                     flyweight.wrap(buffer1, offset);
                     flyweight.validate();
                     LOGGER.debug("Validated tier: tierId={}, tierName={}", flyweight.getTierId(), flyweight.getTierNameAsString());
-
                     ClientTierFlyweight cachedFlyweight = new ClientTierFlyweight();
                     MutableDirectBuffer cacheBuffer = new UnsafeBuffer(ByteBuffer.allocateDirect(ClientTierFlyweight.messageSize()));
                     cacheBuffer.putBytes(0, buffer1, offset, ClientTierFlyweight.messageSize());
                     cachedFlyweight.wrap(cacheBuffer, 0);
-
-                    synchronized (cache) {
-                        cache.add(cachedFlyweight);
-                    }
+                    cache.add(cachedFlyweight);
                     LOGGER.info("Replayed tier: tierId={}, tierName={}", cachedFlyweight.getTierId(), cachedFlyweight.getTierNameAsString());
                 } catch (Exception e) {
                     LOGGER.error("Error decoding tier: {}", e.getMessage(), e);
@@ -165,6 +158,13 @@ public enum AeronService {
                 }, 1);
             }
         }
+
+        for (long recId : findRecordingsWithData(archive, REPLAY_CHANNEL, StreamId.CONFIG_STREAM.getCode())) {
+            archive.startReplay(
+                    recId, 0, Integer.MAX_VALUE, REPLAY_CHANNEL, StreamId.CONFIG_STREAM.getCode()
+            );
+        }
+
         return List.of();
     }
 
@@ -173,6 +173,31 @@ public enum AeronService {
             return new ArrayList<>(cache);
         }
     }
+
+    public static List<Long> findRecordingsWithData(
+            AeronArchive archive,
+            String channel,
+            int streamId
+    ) {
+        LongArrayList validRecordingIds = new LongArrayList();
+
+        archive.listRecordings(0, Integer.MAX_VALUE,
+                (controlSessionId, correlationId, recordingId, startTimestamp, stopTimestamp,
+                 startPosition, stopPosition, initialTermId, segmentFileLength,
+                 termBufferLength, mtuLength, sessionId, sId, strippedChannel,
+                 originalChannel, sourceIdentity) -> {
+
+                    if (sId == streamId &&
+                            originalChannel.equals(channel) &&
+                            stopPosition > startPosition) {
+                        validRecordingIds.add(recordingId);
+                    }
+                });
+
+        validRecordingIds.sort(Long::compareTo); // Optional: sorted by ID (ascending)
+        return validRecordingIds;
+    }
+
 
     public void shutdown() {
         try {
