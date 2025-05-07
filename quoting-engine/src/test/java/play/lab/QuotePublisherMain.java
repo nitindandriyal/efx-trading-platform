@@ -5,9 +5,9 @@ import io.aeron.Publication;
 
 import org.agrona.concurrent.UnsafeBuffer;
 import play.lab.model.sbe.MessageHeaderEncoder;
-import pub.lab.trading.model.pricing.QuoteWriter;
-import pub.lab.trading.model.ClientTierLevel;
-import pub.lab.trading.model.Tenor;
+import pub.lab.trading.common.model.pricing.QuoteWriter;
+import pub.lab.trading.common.model.ClientTierLevel;
+import pub.lab.trading.common.model.Tenor;
 
 import java.nio.ByteBuffer;
 import java.time.LocalDate;

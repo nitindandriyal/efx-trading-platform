@@ -17,6 +17,11 @@
         </enum>
 
         <type name="string64" primitiveType="char" length="64"/>
+
+        <composite name="groupSizeEncoding">
+            <type name="blockLength" primitiveType="uint16"/>
+            <type name="numInGroup" primitiveType="uint8"/>
+        </composite>
     </types>
 
     <message name="Heartbeat" id="1">
@@ -25,20 +30,16 @@
     </message>
 
     <message name="Quote" id="2">
-        <sequence name="bids" dimensionType="uint32" lengthType="uint32">
-            <type name="float64"/>
-        </sequence>
-        <sequence name="asks" dimensionType="uint32" lengthType="uint32">
-            <type name="float64"/>
-        </sequence>
-        <sequence name="volume" dimensionType="uint32" lengthType="uint32">
-            <type name="float64"/>
-        </sequence>
         <field name="symbol" id="1" type="uint32"/>
         <field name="priceCreationTimestamp" id="2" type="uint64"/>
         <field name="tenor" id="3" type="uint32"/>
         <field name="valueDate" id="4" type="uint64"/>
         <field name="clientTier" id="5" type="uint32"/>
+        <group name="rung" id="6" dimensionType="groupSizeEncoding" description="Bid, Ask, and Volume for each price level" >
+            <field name="bid" id="601" type="double" description="Bid price"/>
+            <field name="ask" id="602" type="double" description="Ask price"/>
+            <field name="volume" id="603" type="double" description="Volume/lot size"/>
+        </group>
     </message>
 
     <message name="ClientProfile" id="3">

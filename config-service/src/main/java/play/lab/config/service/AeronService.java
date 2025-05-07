@@ -17,9 +17,9 @@ import org.agrona.concurrent.ringbuffer.OneToOneRingBuffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import play.lab.model.sbe.ClientTierDecoder;
-import pub.lab.trading.AeronConfigs;
-import pub.lab.trading.StreamId;
-import pub.lab.trading.model.config.ClientTierFlyweight;
+import pub.lab.trading.common.config.AeronConfigs;
+import pub.lab.trading.common.config.StreamId;
+import pub.lab.trading.common.model.config.ClientTierFlyweight;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -27,8 +27,8 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.agrona.concurrent.ringbuffer.RingBufferDescriptor.TRAILER_LENGTH;
-import static pub.lab.trading.AeronConfigs.CONTROL_REQUEST_CHANNEL;
-import static pub.lab.trading.AeronConfigs.CONTROL_RESPONSE_CHANNEL;
+import static pub.lab.trading.common.config.AeronConfigs.CONTROL_REQUEST_CHANNEL;
+import static pub.lab.trading.common.config.AeronConfigs.CONTROL_RESPONSE_CHANNEL;
 
 public enum AeronService {
     INSTANCE;

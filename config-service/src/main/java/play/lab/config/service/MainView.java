@@ -11,7 +11,7 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.provider.ListDataProvider;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.PostConstruct;
-import pub.lab.trading.model.config.ClientTierFlyweight;
+import pub.lab.trading.common.model.config.ClientTierFlyweight;
 
 import java.util.List;
 

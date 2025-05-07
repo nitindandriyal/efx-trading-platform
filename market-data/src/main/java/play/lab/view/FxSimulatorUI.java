@@ -92,7 +92,7 @@ public class FxSimulatorUI extends VerticalLayout {
         // Enable polling every 1 second
         UI.getCurrent().setPollInterval(1000);
 
-        // On each poll, refresh the grid
+        // On each doWork, refresh the grid
         UI.getCurrent().addPollListener(e -> refreshGrid());
 
         refreshGrid();

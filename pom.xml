@@ -14,7 +14,7 @@
     <name>fx-trading-platform</name>
     <modules>
         <module>market-data</module>
-        <module>pricing-engine</module>
+        <module>spot-pricing-engine</module>
         <module>quoting-engine</module>
         <module>pricing-distribution</module>
         <module>aeron-media-driver-wrapper</module>
@@ -53,6 +53,12 @@
                 <artifactId>logback-classic</artifactId>
                 <version>1.5.18</version>
             </dependency>
+            <dependency>
+                <groupId>net.logstash.logback</groupId>
+                <artifactId>logstash-logback-encoder</artifactId>
+                <version>7.4</version>
+            </dependency>
+
             <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>

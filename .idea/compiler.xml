@@ -9,9 +9,9 @@
         <module name="aeron-media-driver-wrapper" />
         <module name="market-data" />
         <module name="config-service" />
-        <module name="pricing-engine" />
         <module name="quoting-engine" />
         <module name="standard-adapter" />
+        <module name="spot-pricing-engine" />
         <module name="commons" />
       </profile>
     </annotationProcessing>

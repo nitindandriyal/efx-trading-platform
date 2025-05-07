@@ -8,9 +8,9 @@ import org.agrona.concurrent.YieldingIdleStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import play.lab.model.sbe.HeartbeatDecoder;
-import pub.lab.trading.model.pricing.QuoteView;
-import pub.lab.trading.model.hb.HeartbeatView;
-import pub.lab.trading.model.hb.HeartbeatWriter;
+import pub.lab.trading.common.model.pricing.QuoteView;
+import pub.lab.trading.common.model.hb.HeartbeatView;
+import pub.lab.trading.common.model.hb.HeartbeatWriter;
 
 import java.nio.ByteBuffer;
 

@@ -5,10 +5,10 @@ import io.aeron.Publication;
 import org.agrona.concurrent.UnsafeBuffer;
 import play.lab.marketdata.model.MarketDataTick;
 import play.lab.model.sbe.MessageHeaderEncoder;
-import pub.lab.trading.AeronConfigs;
-import pub.lab.trading.model.ClientTierLevel;
-import pub.lab.trading.model.Tenor;
-import pub.lab.trading.model.pricing.QuoteWriter;
+import pub.lab.trading.common.config.AeronConfigs;
+import pub.lab.trading.common.model.ClientTierLevel;
+import pub.lab.trading.common.model.Tenor;
+import pub.lab.trading.common.model.pricing.QuoteWriter;
 
 import java.nio.ByteBuffer;
 import java.time.LocalDate;
