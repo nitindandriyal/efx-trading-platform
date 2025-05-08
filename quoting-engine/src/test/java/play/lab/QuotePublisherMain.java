@@ -2,15 +2,11 @@ package play.lab;
 
 import io.aeron.Aeron;
 import io.aeron.Publication;
-
 import org.agrona.concurrent.UnsafeBuffer;
 import play.lab.model.sbe.MessageHeaderEncoder;
 import pub.lab.trading.common.model.pricing.QuoteWriter;
-import pub.lab.trading.common.model.ClientTierLevel;
-import pub.lab.trading.common.model.Tenor;
 
 import java.nio.ByteBuffer;
-import java.time.LocalDate;
 import java.util.List;
 
 public class QuotePublisherMain {
@@ -32,6 +28,7 @@ public class QuotePublisherMain {
         System.out.println("📡 Streaming quotes to Aeron IPC [stream=10] — Ctrl+C to stop");
 
         long lastSend = System.currentTimeMillis();
+        double[] volumes = new double[]{10_000_000.0, 20_000_000.0};
         while (true) {
             long now = System.currentTimeMillis();
             double dt = (now - lastSend) / 1000.0;
@@ -45,14 +42,10 @@ public class QuotePublisherMain {
                 double[] asks = new double[]{tick.ask, tick.ask + 0.00005};
 
                 // Wrap + encode
-                quoteWriter.wrap(buffer, 0)
-                        .setCcyPair(tick.pair)
-                        .setTenor(Tenor.SPOT.getCode())
-                        .setValueDate(LocalDate.now().toEpochDay())
-                        .setClientTier(ClientTierLevel.GOLD.getId())
-                        .setPriceCreationTimestamp(tick.timestamp)
-                        .setBids(bids, bids.length)
-                        .setAsks(asks, asks.length);
+                quoteWriter.beginQuote(
+                        tick.pair, tick.valueDateEpoch, tick.timestamp, bids.length);
+
+                quoteWriter.setPrices(bids, asks, volumes, 2);
 
                 long result = quotePub.offer(buffer, 0, quoteWriter.encodedLength());
                 if (result < 0) {

@@ -4,31 +4,24 @@ import io.aeron.Aeron;
 import io.aeron.Publication;
 import org.agrona.concurrent.UnsafeBuffer;
 import play.lab.marketdata.model.MarketDataTick;
-import play.lab.model.sbe.MessageHeaderEncoder;
 import pub.lab.trading.common.config.AeronConfigs;
-import pub.lab.trading.common.model.ClientTierLevel;
-import pub.lab.trading.common.model.Tenor;
+import pub.lab.trading.common.lifecycle.ArrayObjectPool;
 import pub.lab.trading.common.model.pricing.QuoteWriter;
+import pub.lab.trading.common.util.MutableString;
 
 import java.nio.ByteBuffer;
-import java.time.LocalDate;
 
 public class QuotePublisher {
     private final QuoteWriter quoteWriter;
-    private final UnsafeBuffer buffer = new UnsafeBuffer(ByteBuffer.allocateDirect(2048)); // Enough for full book
+    private final UnsafeBuffer buffer = new UnsafeBuffer(ByteBuffer.allocateDirect(2048));
     private final Publication quotePub;
+    private final ArrayObjectPool<MutableString> currencyPairObjectPool = new ArrayObjectPool<>("currencyPairObjectPool", MutableString::new);
 
     public QuotePublisher() {
         String aeronDir = System.getProperty("aeron.base.path") + AeronConfigs.LIVE_DIR;
-        // 1. Start Aeron
         Aeron aeron = Aeron.connect(new Aeron.Context().aeronDirectoryName(aeronDir));
-
-        // 2. Setup IPC publication on Quote stream (10)
         this.quotePub = aeron.addExclusivePublication("aeron:ipc", 10);
-
-        // 3. Prepare reusable components
         this.quoteWriter = new QuoteWriter();
-        MessageHeaderEncoder header = new MessageHeaderEncoder();
     }
 
     public void publish(final MarketDataTick marketDataTick) {
@@ -36,14 +29,7 @@ public class QuotePublisher {
         bid[0] = marketDataTick.getBid();
         double[] ask = new double[1];
         ask[0] = marketDataTick.getAsk();
-        quoteWriter.wrap(buffer, 0)
-                .setCcyPair(marketDataTick.getPair())
-                .setTenor(Tenor.SPOT.getCode())
-                .setValueDate(LocalDate.now().toEpochDay())
-                .setClientTier(ClientTierLevel.GOLD.getId())
-                .setPriceCreationTimestamp(marketDataTick.getTimestamp())
-                .setBids(bid, 1)
-                .setAsks(ask, 1);
+
 
         long result = quotePub.offer(buffer, 0, quoteWriter.encodedLength());
         if (result < 0) {

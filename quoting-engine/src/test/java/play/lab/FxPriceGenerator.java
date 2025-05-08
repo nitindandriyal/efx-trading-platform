@@ -1,5 +1,7 @@
 package play.lab;
 
+import pub.lab.trading.common.util.HolidayCalendar;
+
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -49,13 +51,15 @@ public class FxPriceGenerator {
         public final double bid;
         public final double ask;
         public final long timestamp;
+        public final long valueDateEpoch;
 
-        public FxTick(String pair, double mid, double bid, double ask, long ts) {
+        public FxTick(String pair, double mid, double bid, double ask, long ts, long valueDateEpoch) {
             this.pair = pair;
             this.mid = mid;
             this.bid = bid;
             this.ask = ask;
             this.timestamp = ts;
+            this.valueDateEpoch = valueDateEpoch;
         }
 
         @Override
@@ -87,7 +91,7 @@ public class FxPriceGenerator {
             double bid = price - spread / 2.0;
             double ask = price + spread / 2.0;
 
-            return new FxTick(symbol, price, bid, ask, now);
+            return new FxTick(symbol, price, bid, ask, now, HolidayCalendar.getValueDate());
         }
     }
 }

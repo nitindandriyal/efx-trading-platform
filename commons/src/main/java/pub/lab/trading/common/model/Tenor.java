@@ -13,16 +13,6 @@ public enum Tenor {
     SIX_MONTHS(180),
     ONE_YEAR(365);
 
-    private final int code;
-
-    Tenor(int code) {
-        this.code = code;
-    }
-
-    public int getCode() {
-        return code;
-    }
-
     private static final Int2ObjectHashMap<Tenor> BY_DAYS = new Int2ObjectHashMap<>();
 
     static {
@@ -31,7 +21,17 @@ public enum Tenor {
         }
     }
 
+    private final int code;
+
+    Tenor(int code) {
+        this.code = code;
+    }
+
     public static Tenor fromCode(int code) {
         return BY_DAYS.get(code);
+    }
+
+    public int getCode() {
+        return code;
     }
 }

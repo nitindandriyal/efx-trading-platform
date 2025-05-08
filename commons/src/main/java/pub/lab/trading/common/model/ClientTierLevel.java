@@ -8,16 +8,6 @@ public enum ClientTierLevel {
     GOLD(3),
     PLATINUM(4);
 
-    private final int id;
-
-    ClientTierLevel(int id) {
-        this.id = id;
-    }
-
-    public int getId() {
-        return id;
-    }
-
     // Reverse lookup map
     private static final Int2ObjectHashMap<ClientTierLevel> ID_MAP = new Int2ObjectHashMap<>();
 
@@ -27,7 +17,17 @@ public enum ClientTierLevel {
         }
     }
 
+    private final int id;
+
+    ClientTierLevel(int id) {
+        this.id = id;
+    }
+
     public static ClientTierLevel fromId(int id) {
         return ID_MAP.get(id);
+    }
+
+    public int getId() {
+        return id;
     }
 }

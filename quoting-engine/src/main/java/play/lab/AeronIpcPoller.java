@@ -7,10 +7,10 @@ import org.agrona.concurrent.UnsafeBuffer;
 import org.agrona.concurrent.YieldingIdleStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import play.lab.model.sbe.HeartbeatDecoder;
-import pub.lab.trading.common.model.pricing.QuoteView;
+import play.lab.model.sbe.HeartbeatMessageDecoder;
 import pub.lab.trading.common.model.hb.HeartbeatView;
 import pub.lab.trading.common.model.hb.HeartbeatWriter;
+import pub.lab.trading.common.model.pricing.QuoteView;
 
 import java.nio.ByteBuffer;
 
@@ -55,7 +55,7 @@ public class AeronIpcPoller {
             didWork |= q > 0;
 
             int h = hbSub.poll((buf, offset, len, hdr) -> {
-                hbView.wrap(buf, offset + 8, HeartbeatDecoder.BLOCK_LENGTH, HeartbeatDecoder.SCHEMA_VERSION);
+                hbView.wrap(buf, offset + 8, HeartbeatMessageDecoder.BLOCK_LENGTH, HeartbeatMessageDecoder.SCHEMA_VERSION);
             }, 10);
             didWork |= h > 0;
 

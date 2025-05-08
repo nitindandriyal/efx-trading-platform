@@ -14,18 +14,18 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Pricer {
-    private final Publication fxQuotes;
-    private final Publication bondQuotes;
     private static final String A_CHANNEL = "aeron:ipc?alias=fx"; // Single IPC channel, 32MB buffer
     private static final String B_CHANNEL = "aeron:ipc?alias=bond"; // Single IPC channel, 32MB buffer
     private static final int FX_STREAM_ID = 1001; // Stream for FX quotes
     private static final int BOND_STREAM_ID = 1002; // Stream for bond quotes
+    private static volatile int receivedFx = 0;
+    private static volatile int receivedBond = 0;
+    private final Publication fxQuotes;
+    private final Publication bondQuotes;
     private final Subscription fxSubscription;
     private final Subscription bondSubscription;
     private final ExecutorService executor;
     private volatile boolean running = true;
-    private static volatile int receivedFx = 0;
-    private static volatile int receivedBond = 0;
 
     public Pricer(Aeron aeron) {
         // Two Publications on the same channel, different stream IDs
@@ -36,13 +36,35 @@ public class Pricer {
         executor = Executors.newFixedThreadPool(2);
         startPolling();
     }
+
+    public static void main(String[] args) {
+
+        String aeronDir = System.getProperty("aeron.base.path") + AeronConfigs.LIVE_DIR;
+        try (Aeron aeron = Aeron.connect(new Aeron.Context().aeronDirectoryName(aeronDir))) {
+
+            Pricer pricer = new Pricer(aeron);
+            Quote fxQuote = new Quote("EUR/USD", 1.10, 1.11, System.currentTimeMillis());
+            Quote bondQuote = new Quote("US-Treasury", 99.50, 99.60, System.currentTimeMillis());
+            // Simulate contention
+            for (int i = 0; i < 10_000_000; i++) {
+                pricer.publishQuote(fxQuote, true); // Flood FX stream
+                pricer.publishQuote(bondQuote, false); // Check for bond delay
+            }
+
+            System.out.println("Total received(Fx): " + receivedFx);
+            System.out.println("Total received(Bond): " + receivedBond);
+            pricer.close();
+            pricer.running = false;
+        }
+    }
+
     private void startPolling() {
         // Poll FX stream
         executor.submit(() -> {
             YieldingIdleStrategy idleStrategy = new YieldingIdleStrategy();
             while (running) {
                 int fragments = fxSubscription.poll((buffer, offset, length, header) -> {
-                    if(Quote.isQuote(buffer, offset)) {
+                    if (Quote.isQuote(buffer, offset)) {
                         receivedFx++;
                         Quote quote = Quote.decode(buffer, offset);
                     }
@@ -57,7 +79,7 @@ public class Pricer {
             AtomicInteger counter = new AtomicInteger();
             while (running) {
                 int fragments = bondSubscription.poll((buffer, offset, length, header) -> {
-                    if(Quote.isQuote(buffer, offset)) {
+                    if (Quote.isQuote(buffer, offset)) {
                         Quote quote = Quote.decode(buffer, offset);
                         receivedBond++;
                     }
@@ -85,40 +107,35 @@ public class Pricer {
         bondSubscription.close();
         executor.close();
     }
-
-    public static void main(String[] args) {
-
-        String aeronDir = System.getProperty("aeron.base.path") + AeronConfigs.LIVE_DIR;
-        try (Aeron aeron = Aeron.connect(new Aeron.Context().aeronDirectoryName(aeronDir))) {
-
-            Pricer pricer = new Pricer(aeron);
-            Quote fxQuote = new Quote("EUR/USD", 1.10, 1.11, System.currentTimeMillis());
-            Quote bondQuote = new Quote("US-Treasury", 99.50, 99.60, System.currentTimeMillis());
-            // Simulate contention
-            for (int i = 0; i < 10_000_000; i++) {
-                pricer.publishQuote(fxQuote, true); // Flood FX stream
-                pricer.publishQuote(bondQuote, false); // Check for bond delay
-            }
-
-            System.out.println("Total received(Fx): " + receivedFx);
-            System.out.println("Total received(Bond): " + receivedBond);
-            pricer.close();
-            pricer.running = false;
-        }
-    }
 }
 
 
 class Quote {
     private static final int QUOTE_TEMPLATE_ID = 0x807;
+    private static final ThreadLocal<Quote> quoteThreadLocal = ThreadLocal.withInitial(() -> new Quote(null, 0.0, 0.0, 0L));
     private CharSequence instrument;
     private double bid;
     private double ask;
     private long timestamp;
-    private static final ThreadLocal<Quote> quoteThreadLocal = ThreadLocal.withInitial(() -> new Quote(null, 0.0, 0.0, 0L));
+
+    public Quote(String instrument, double bid, double ask, long timestamp) {
+        this.instrument = instrument;
+        this.bid = bid;
+        this.ask = ask;
+        this.timestamp = timestamp;
+    }
 
     public static boolean isQuote(DirectBuffer buffer, int offset) {
         return QUOTE_TEMPLATE_ID == buffer.getInt(offset);
+    }
+
+    public static Quote decode(DirectBuffer buffer, int offset) {
+        Quote quote = quoteThreadLocal.get();
+        quote.instrument = buffer.getStringAscii(offset + 4);
+        quote.bid = buffer.getDouble(offset + 104);
+        quote.ask = buffer.getDouble(offset + 112);
+        quote.timestamp = buffer.getLong(offset + 120);
+        return quote;
     }
 
     public double getBid() {
@@ -133,13 +150,6 @@ class Quote {
         return timestamp;
     }
 
-    public Quote(String instrument, double bid, double ask, long timestamp) {
-        this.instrument = instrument;
-        this.bid = bid;
-        this.ask = ask;
-        this.timestamp = timestamp;
-    }
-
     public CharSequence getInstrument() {
         return instrument;
     }
@@ -150,14 +160,5 @@ class Quote {
         buffer.putDouble(104, bid);
         buffer.putDouble(112, ask);
         buffer.putLong(120, timestamp);
-    }
-
-    public static Quote decode(DirectBuffer buffer, int offset) {
-        Quote quote = quoteThreadLocal.get();
-        quote.instrument = buffer.getStringAscii(offset + 4);
-        quote.bid = buffer.getDouble(offset + 104);
-        quote.ask = buffer.getDouble(offset + 112);
-        quote.timestamp = buffer.getLong(offset + 120);
-        return quote;
     }
 }

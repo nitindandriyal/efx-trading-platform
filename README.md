@@ -1,7 +1,8 @@
 # FX Trading Platform
 
 A modular, real-time FX trading platform built with Java, Spring Boot, and Vaadin.  
-It supports tiered pricing, latency smoothing, and customizable risk controls — ideal for simulating and deploying institutional-grade FX pricing engines.
+It supports tiered pricing, latency smoothing, and customizable risk controls — ideal for simulating and deploying
+institutional-grade FX pricing engines.
 
 ---
 
@@ -11,7 +12,8 @@ It supports tiered pricing, latency smoothing, and customizable risk controls �
 - **Latency Smoothing** – Protect against latency arbitrage by smoothing quote updates.
 - **Quote Throttling** – Control the frequency of quote updates to manage system load.
 - **Vaadin UI** – Interactive frontend for monitoring and adjusting pricing parameters.
-- **Aeron/SBE Backend** – Robust backend services for market data ingestion and pricing, execution at high speeds/low latencies.
+- **Aeron/SBE Backend** – Robust backend services for market data ingestion and pricing, execution at high speeds/low
+  latencies.
 - **Single Threaded Processes**
 - **Extensible Architecture** – Modular design for integrating OMS, analytics, and execution.
 - **TODO** - Stress Tests, Benchmarks, Metrics, Failover
@@ -25,9 +27,11 @@ The platform is structured into the following Maven modules:
 - `market-data` – Handles market data feed ingestion and preprocessing.
 - `pricing-engine` – Core logic for quote construction and tiered pricing.
 - `quoting-engine` – Layer between pricing and distribution, to optimize distribution streams fan-out.
-- `config-service` – Delivers config changes directly to all processes via aeron config messages, Vaadin-based frontend for managing configs in live env.
+- `config-service` – Delivers config changes directly to all processes via aeron config messages, Vaadin-based frontend
+  for managing configs in live env.
 - `commons` – Shared utilities, config models, and data objects.
-- `aeron-media-driver` – Independent media driver with arhciving enabled to store and retrieve the runtime configurations.
+- `aeron-media-driver` – Independent media driver with arhciving enabled to store and retrieve the runtime
+  configurations.
 
 ---
 
@@ -52,6 +56,7 @@ mvn clean install
 cd market-data
 mvn spring-boot:run
 ```
+
 ![image](https://github.com/user-attachments/assets/7c120d5c-aa26-4af2-9a86-fd64c9d24d90)
 
 ## Architecture Diagram

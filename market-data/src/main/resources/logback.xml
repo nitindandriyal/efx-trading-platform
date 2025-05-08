@@ -14,12 +14,12 @@
         <queueSize>16384</queueSize> <!-- Ring buffer size (must be power of 2) -->
 
         <!-- Handle lost events (optional) -->
-        <eventLossReporter class="ch.qos.logback.core.status.OnConsoleStatusListener" />
+        <eventLossReporter class="ch.qos.logback.core.status.OnConsoleStatusListener"/>
     </appender>
 
     <!-- Root logger -->
     <root level="INFO">
-        <appender-ref ref="ASYNC_DISRUPTOR" />
+        <appender-ref ref="ASYNC_DISRUPTOR"/>
     </root>
 
 </configuration>

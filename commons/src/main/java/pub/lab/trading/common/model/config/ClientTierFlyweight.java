@@ -2,6 +2,7 @@ package pub.lab.trading.common.model.config;
 
 import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
+
 import java.nio.charset.StandardCharsets;
 
 /**
@@ -32,11 +33,19 @@ public class ClientTierFlyweight {
     private static final int ACCESS_TO_CROSSES_OFFSET = 118; // BooleanEnum
     private static final int CREDIT_LIMIT_USD_OFFSET = 119; // double
     private static final int TIER_PRIORITY_OFFSET = 127; // uint8
-
+    private final byte[] tempNameBuffer = new byte[MAX_TIER_NAME_LENGTH]; // Reusable for string conversion
     private DirectBuffer buffer;
     private MutableDirectBuffer mutableBuffer;
     private int offset;
-    private final byte[] tempNameBuffer = new byte[MAX_TIER_NAME_LENGTH]; // Reusable for string conversion
+
+    /**
+     * Gets the size of the ClientTier message.
+     *
+     * @return the message size in bytes
+     */
+    public static int messageSize() {
+        return MESSAGE_SIZE;
+    }
 
     /**
      * Wraps a buffer for reading or writing at the specified offset.
@@ -66,6 +75,8 @@ public class ClientTierFlyweight {
         return this;
     }
 
+    // --- View Methods (Getters) ---
+
     /**
      * Validates that the wrapped buffer contains a ClientTier message.
      *
@@ -81,10 +92,17 @@ public class ClientTierFlyweight {
         }
     }
 
-    // --- View Methods (Getters) ---
-
     public int getTierId() {
         return buffer.getShort(offset + TIER_ID_OFFSET) & 0xFFFF;
+    }
+
+    public ClientTierFlyweight setTierId(int tierId) {
+        if (tierId < 0 || tierId > 65535) {
+            throw new IllegalArgumentException("tierId must be between 0 and 65535");
+        }
+        checkMutable();
+        mutableBuffer.putShort(offset + TIER_ID_OFFSET, (short) tierId);
+        return this;
     }
 
     public String getTierNameAsString() {
@@ -97,62 +115,169 @@ public class ClientTierFlyweight {
         return buffer.getDouble(offset + MARKUP_BPS_OFFSET);
     }
 
+    public ClientTierFlyweight setMarkupBps(double markupBps) {
+        if (markupBps < 0 || markupBps > 1000) {
+            throw new IllegalArgumentException("markupBps must be between 0 and 1000");
+        }
+        checkMutable();
+        mutableBuffer.putDouble(offset + MARKUP_BPS_OFFSET, markupBps);
+        return this;
+    }
+
     public double getSpreadTighteningFactor() {
         return buffer.getDouble(offset + SPREAD_TIGHTENING_FACTOR_OFFSET);
+    }
+
+    public ClientTierFlyweight setSpreadTighteningFactor(double spreadTighteningFactor) {
+        if (spreadTighteningFactor < 0 || spreadTighteningFactor > 10) {
+            throw new IllegalArgumentException("spreadTighteningFactor must be between 0 and 10");
+        }
+        checkMutable();
+        mutableBuffer.putDouble(offset + SPREAD_TIGHTENING_FACTOR_OFFSET, spreadTighteningFactor);
+        return this;
     }
 
     public long getQuoteThrottleMs() {
         return buffer.getInt(offset + QUOTE_THROTTLE_MS_OFFSET) & 0xFFFFFFFFL;
     }
 
+    public ClientTierFlyweight setQuoteThrottleMs(long quoteThrottleMs) {
+        if (quoteThrottleMs < 0 || quoteThrottleMs > 4294967295L) {
+            throw new IllegalArgumentException("quoteThrottleMs must be between 0 and 4294967295");
+        }
+        checkMutable();
+        mutableBuffer.putInt(offset + QUOTE_THROTTLE_MS_OFFSET, (int) quoteThrottleMs);
+        return this;
+    }
+
     public long getLatencyProtectionMs() {
         return buffer.getInt(offset + LATENCY_PROTECTION_MS_OFFSET) & 0xFFFFFFFFL;
+    }
+
+    public ClientTierFlyweight setLatencyProtectionMs(long latencyProtectionMs) {
+        if (latencyProtectionMs < 0 || latencyProtectionMs > 4294967295L) {
+            throw new IllegalArgumentException("latencyProtectionMs must be between 0 and 4294967295");
+        }
+        checkMutable();
+        mutableBuffer.putInt(offset + LATENCY_PROTECTION_MS_OFFSET, (int) latencyProtectionMs);
+        return this;
     }
 
     public long getQuoteExpiryMs() {
         return buffer.getInt(offset + QUOTE_EXPIRY_MS_OFFSET) & 0xFFFFFFFFL;
     }
 
+    public ClientTierFlyweight setQuoteExpiryMs(long quoteExpiryMs) {
+        if (quoteExpiryMs < 0 || quoteExpiryMs > 4294967295L) {
+            throw new IllegalArgumentException("quoteExpiryMs must be between 0 and 4294967295");
+        }
+        checkMutable();
+        mutableBuffer.putInt(offset + QUOTE_EXPIRY_MS_OFFSET, (int) quoteExpiryMs);
+        return this;
+    }
+
     public double getMinNotional() {
         return buffer.getDouble(offset + MIN_NOTIONAL_OFFSET);
+    }
+
+    // --- Writer Methods (Setters) ---
+
+    public ClientTierFlyweight setMinNotional(double minNotional) {
+        if (minNotional < 0) {
+            throw new IllegalArgumentException("minNotional must be non-negative");
+        }
+        double maxNotional = mutableBuffer.getDouble(offset + MAX_NOTIONAL_OFFSET);
+        if (minNotional > maxNotional && maxNotional != 0) {
+            throw new IllegalArgumentException("minNotional must not exceed maxNotional");
+        }
+        checkMutable();
+        mutableBuffer.putDouble(offset + MIN_NOTIONAL_OFFSET, minNotional);
+        return this;
     }
 
     public double getMaxNotional() {
         return buffer.getDouble(offset + MAX_NOTIONAL_OFFSET);
     }
 
+    public ClientTierFlyweight setMaxNotional(double maxNotional) {
+        if (maxNotional < 0) {
+            throw new IllegalArgumentException("maxNotional must be non-negative");
+        }
+        double minNotional = mutableBuffer.getDouble(offset + MIN_NOTIONAL_OFFSET);
+        if (minNotional > maxNotional) {
+            throw new IllegalArgumentException("maxNotional must not be less than minNotional");
+        }
+        checkMutable();
+        mutableBuffer.putDouble(offset + MAX_NOTIONAL_OFFSET, maxNotional);
+        return this;
+    }
+
     public byte getPricePrecision() {
         return buffer.getByte(offset + PRICE_PRECISION_OFFSET);
+    }
+
+    public ClientTierFlyweight setPricePrecision(byte pricePrecision) {
+        if (pricePrecision < 0) {
+            throw new IllegalArgumentException("pricePrecision must be non-negative");
+        }
+        checkMutable();
+        mutableBuffer.putByte(offset + PRICE_PRECISION_OFFSET, pricePrecision);
+        return this;
     }
 
     public boolean isStreamingEnabled() {
         return buffer.getByte(offset + STREAMING_ENABLED_OFFSET) != 0;
     }
 
+    public ClientTierFlyweight setStreamingEnabled(boolean streamingEnabled) {
+        checkMutable();
+        mutableBuffer.putByte(offset + STREAMING_ENABLED_OFFSET, (byte) (streamingEnabled ? 1 : 0));
+        return this;
+    }
+
     public boolean isLimitOrderEnabled() {
         return buffer.getByte(offset + LIMIT_ORDER_ENABLED_OFFSET) != 0;
+    }
+
+    public ClientTierFlyweight setLimitOrderEnabled(boolean limitOrderEnabled) {
+        checkMutable();
+        mutableBuffer.putByte(offset + LIMIT_ORDER_ENABLED_OFFSET, (byte) (limitOrderEnabled ? 1 : 0));
+        return this;
     }
 
     public boolean isAccessToCrosses() {
         return buffer.getByte(offset + ACCESS_TO_CROSSES_OFFSET) != 0;
     }
 
+    public ClientTierFlyweight setAccessToCrosses(boolean accessToCrosses) {
+        checkMutable();
+        mutableBuffer.putByte(offset + ACCESS_TO_CROSSES_OFFSET, (byte) (accessToCrosses ? 1 : 0));
+        return this;
+    }
+
     public double getCreditLimitUsd() {
         return buffer.getDouble(offset + CREDIT_LIMIT_USD_OFFSET);
+    }
+
+    public ClientTierFlyweight setCreditLimitUsd(double creditLimitUsd) {
+        if (creditLimitUsd < 0) {
+            throw new IllegalArgumentException("creditLimitUsd must be non-negative");
+        }
+        checkMutable();
+        mutableBuffer.putDouble(offset + CREDIT_LIMIT_USD_OFFSET, creditLimitUsd);
+        return this;
     }
 
     public byte getTierPriority() {
         return buffer.getByte(offset + TIER_PRIORITY_OFFSET);
     }
 
-    // --- Writer Methods (Setters) ---
-
-    public ClientTierFlyweight setTierId(int tierId) {
-        if (tierId < 0 || tierId > 65535) {
-            throw new IllegalArgumentException("tierId must be between 0 and 65535");
+    public ClientTierFlyweight setTierPriority(byte tierPriority) {
+        if (tierPriority < 0) {
+            throw new IllegalArgumentException("tierPriority must be non-negative");
         }
         checkMutable();
-        mutableBuffer.putShort(offset + TIER_ID_OFFSET, (short) tierId);
+        mutableBuffer.putByte(offset + TIER_PRIORITY_OFFSET, tierPriority);
         return this;
     }
 
@@ -173,122 +298,6 @@ public class ClientTierFlyweight {
         return this;
     }
 
-    public ClientTierFlyweight setMarkupBps(double markupBps) {
-        if (markupBps < 0 || markupBps > 1000) {
-            throw new IllegalArgumentException("markupBps must be between 0 and 1000");
-        }
-        checkMutable();
-        mutableBuffer.putDouble(offset + MARKUP_BPS_OFFSET, markupBps);
-        return this;
-    }
-
-    public ClientTierFlyweight setSpreadTighteningFactor(double spreadTighteningFactor) {
-        if (spreadTighteningFactor < 0 || spreadTighteningFactor > 10) {
-            throw new IllegalArgumentException("spreadTighteningFactor must be between 0 and 10");
-        }
-        checkMutable();
-        mutableBuffer.putDouble(offset + SPREAD_TIGHTENING_FACTOR_OFFSET, spreadTighteningFactor);
-        return this;
-    }
-
-    public ClientTierFlyweight setQuoteThrottleMs(long quoteThrottleMs) {
-        if (quoteThrottleMs < 0 || quoteThrottleMs > 4294967295L) {
-            throw new IllegalArgumentException("quoteThrottleMs must be between 0 and 4294967295");
-        }
-        checkMutable();
-        mutableBuffer.putInt(offset + QUOTE_THROTTLE_MS_OFFSET, (int) quoteThrottleMs);
-        return this;
-    }
-
-    public ClientTierFlyweight setLatencyProtectionMs(long latencyProtectionMs) {
-        if (latencyProtectionMs < 0 || latencyProtectionMs > 4294967295L) {
-            throw new IllegalArgumentException("latencyProtectionMs must be between 0 and 4294967295");
-        }
-        checkMutable();
-        mutableBuffer.putInt(offset + LATENCY_PROTECTION_MS_OFFSET, (int) latencyProtectionMs);
-        return this;
-    }
-
-    public ClientTierFlyweight setQuoteExpiryMs(long quoteExpiryMs) {
-        if (quoteExpiryMs < 0 || quoteExpiryMs > 4294967295L) {
-            throw new IllegalArgumentException("quoteExpiryMs must be between 0 and 4294967295");
-        }
-        checkMutable();
-        mutableBuffer.putInt(offset + QUOTE_EXPIRY_MS_OFFSET, (int) quoteExpiryMs);
-        return this;
-    }
-
-    public ClientTierFlyweight setMinNotional(double minNotional) {
-        if (minNotional < 0) {
-            throw new IllegalArgumentException("minNotional must be non-negative");
-        }
-        double maxNotional = mutableBuffer.getDouble(offset + MAX_NOTIONAL_OFFSET);
-        if (minNotional > maxNotional && maxNotional != 0) {
-            throw new IllegalArgumentException("minNotional must not exceed maxNotional");
-        }
-        checkMutable();
-        mutableBuffer.putDouble(offset + MIN_NOTIONAL_OFFSET, minNotional);
-        return this;
-    }
-
-    public ClientTierFlyweight setMaxNotional(double maxNotional) {
-        if (maxNotional < 0) {
-            throw new IllegalArgumentException("maxNotional must be non-negative");
-        }
-        double minNotional = mutableBuffer.getDouble(offset + MIN_NOTIONAL_OFFSET);
-        if (minNotional > maxNotional) {
-            throw new IllegalArgumentException("maxNotional must not be less than minNotional");
-        }
-        checkMutable();
-        mutableBuffer.putDouble(offset + MAX_NOTIONAL_OFFSET, maxNotional);
-        return this;
-    }
-
-    public ClientTierFlyweight setPricePrecision(byte pricePrecision) {
-        if (pricePrecision < 0) {
-            throw new IllegalArgumentException("pricePrecision must be non-negative");
-        }
-        checkMutable();
-        mutableBuffer.putByte(offset + PRICE_PRECISION_OFFSET, pricePrecision);
-        return this;
-    }
-
-    public ClientTierFlyweight setStreamingEnabled(boolean streamingEnabled) {
-        checkMutable();
-        mutableBuffer.putByte(offset + STREAMING_ENABLED_OFFSET, (byte) (streamingEnabled ? 1 : 0));
-        return this;
-    }
-
-    public ClientTierFlyweight setLimitOrderEnabled(boolean limitOrderEnabled) {
-        checkMutable();
-        mutableBuffer.putByte(offset + LIMIT_ORDER_ENABLED_OFFSET, (byte) (limitOrderEnabled ? 1 : 0));
-        return this;
-    }
-
-    public ClientTierFlyweight setAccessToCrosses(boolean accessToCrosses) {
-        checkMutable();
-        mutableBuffer.putByte(offset + ACCESS_TO_CROSSES_OFFSET, (byte) (accessToCrosses ? 1 : 0));
-        return this;
-    }
-
-    public ClientTierFlyweight setCreditLimitUsd(double creditLimitUsd) {
-        if (creditLimitUsd < 0) {
-            throw new IllegalArgumentException("creditLimitUsd must be non-negative");
-        }
-        checkMutable();
-        mutableBuffer.putDouble(offset + CREDIT_LIMIT_USD_OFFSET, creditLimitUsd);
-        return this;
-    }
-
-    public ClientTierFlyweight setTierPriority(byte tierPriority) {
-        if (tierPriority < 0) {
-            throw new IllegalArgumentException("tierPriority must be non-negative");
-        }
-        checkMutable();
-        mutableBuffer.putByte(offset + TIER_PRIORITY_OFFSET, tierPriority);
-        return this;
-    }
-
     /**
      * Initializes the message with the ClientTier message ID.
      *
@@ -298,15 +307,6 @@ public class ClientTierFlyweight {
         checkMutable();
         mutableBuffer.putInt(offset + MESSAGE_ID_OFFSET, MESSAGE_ID);
         return this;
-    }
-
-    /**
-     * Gets the size of the ClientTier message.
-     *
-     * @return the message size in bytes
-     */
-    public static int messageSize() {
-        return MESSAGE_SIZE;
     }
 
     private void checkMutable() {

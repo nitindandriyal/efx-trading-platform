@@ -10,16 +10,6 @@ public enum AppId {
     MARKET_DATA(4),
     STANDARD_ADAPTER(5);
 
-    private final int code;
-
-    AppId(int code) {
-        this.code = code;
-    }
-
-    public int getCode() {
-        return code;
-    }
-
     private static final Int2ObjectHashMap<AppId> MAP = new Int2ObjectHashMap<>();
 
     static {
@@ -28,7 +18,17 @@ public enum AppId {
         }
     }
 
+    private final int code;
+
+    AppId(int code) {
+        this.code = code;
+    }
+
     public static AppId fromCode(int code) {
         return MAP.get(code);
+    }
+
+    public int getCode() {
+        return code;
     }
 }

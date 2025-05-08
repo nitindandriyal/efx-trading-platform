@@ -16,7 +16,8 @@ import org.agrona.concurrent.UnsafeBuffer;
 import org.agrona.concurrent.ringbuffer.OneToOneRingBuffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import play.lab.model.sbe.ClientTierDecoder;
+
+import play.lab.model.sbe.ClientTierConfigMessageDecoder;
 import pub.lab.trading.common.config.AeronConfigs;
 import pub.lab.trading.common.config.StreamId;
 import pub.lab.trading.common.model.config.ClientTierFlyweight;
@@ -32,19 +33,42 @@ import static pub.lab.trading.common.config.AeronConfigs.CONTROL_RESPONSE_CHANNE
 
 public enum AeronService {
     INSTANCE;
-    private final Logger LOGGER = LoggerFactory.getLogger(AeronService.class);
     private static final int MAX_RETRIES = 2;
     private static final String REPLAY_CHANNEL = "aeron:ipc?alias=tiers-replay";// 5 seconds
-
+    private final Logger LOGGER = LoggerFactory.getLogger(AeronService.class);
     private final List<ClientTierFlyweight> cache = new ArrayList<>();
+    private final ClientTierFlyweight flyweight = new ClientTierFlyweight();
+    private final OneToOneRingBuffer ringBuffer = new OneToOneRingBuffer(new UnsafeBuffer(ByteBuffer.allocateDirect(8192 + TRAILER_LENGTH)));
     private Aeron aeron;
     private AeronArchive archive;
     private long publicationId;
-    private final ClientTierFlyweight flyweight = new ClientTierFlyweight();
     private Publication publication;
     private long existingRecordingId;
-    private final OneToOneRingBuffer ringBuffer = new OneToOneRingBuffer(new UnsafeBuffer(ByteBuffer.allocateDirect(8192 + TRAILER_LENGTH)));
     private volatile boolean running = true;
+
+    public static List<Long> findRecordingsWithData(
+            AeronArchive archive,
+            String channel,
+            int streamId
+    ) {
+        LongArrayList validRecordingIds = new LongArrayList();
+
+        archive.listRecordings(0, Integer.MAX_VALUE,
+                (controlSessionId, correlationId, recordingId, startTimestamp, stopTimestamp,
+                 startPosition, stopPosition, initialTermId, segmentFileLength,
+                 termBufferLength, mtuLength, sessionId, sId, strippedChannel,
+                 originalChannel, sourceIdentity) -> {
+
+                    if (sId == streamId &&
+                            originalChannel.equals(channel) &&
+                            stopPosition > startPosition) {
+                        validRecordingIds.add(recordingId);
+                    }
+                });
+
+        validRecordingIds.sort(Long::compareTo); // Optional: sorted by ID (ascending)
+        return validRecordingIds;
+    }
 
     private long findLatestRecording() {
         final MutableLong lastRecordingId = new MutableLong();
@@ -100,7 +124,7 @@ public enum AeronService {
                 .setCreditLimitUsd(creditLimitUsd)
                 .setTierPriority(tierPriority);
 
-        ringBuffer.write(ClientTierDecoder.TEMPLATE_ID, buffer, 0, ClientTierFlyweight.messageSize());
+        ringBuffer.write(ClientTierConfigMessageDecoder.TEMPLATE_ID, buffer, 0, ClientTierFlyweight.messageSize());
 
         ClientTierFlyweight cachedFlyweight = new ClientTierFlyweight();
         MutableDirectBuffer cacheBuffer = new UnsafeBuffer(ByteBuffer.allocateDirect(ClientTierFlyweight.messageSize()));
@@ -173,31 +197,6 @@ public enum AeronService {
             return new ArrayList<>(cache);
         }
     }
-
-    public static List<Long> findRecordingsWithData(
-            AeronArchive archive,
-            String channel,
-            int streamId
-    ) {
-        LongArrayList validRecordingIds = new LongArrayList();
-
-        archive.listRecordings(0, Integer.MAX_VALUE,
-                (controlSessionId, correlationId, recordingId, startTimestamp, stopTimestamp,
-                 startPosition, stopPosition, initialTermId, segmentFileLength,
-                 termBufferLength, mtuLength, sessionId, sId, strippedChannel,
-                 originalChannel, sourceIdentity) -> {
-
-                    if (sId == streamId &&
-                            originalChannel.equals(channel) &&
-                            stopPosition > startPosition) {
-                        validRecordingIds.add(recordingId);
-                    }
-                });
-
-        validRecordingIds.sort(Long::compareTo); // Optional: sorted by ID (ascending)
-        return validRecordingIds;
-    }
-
 
     public void shutdown() {
         try {

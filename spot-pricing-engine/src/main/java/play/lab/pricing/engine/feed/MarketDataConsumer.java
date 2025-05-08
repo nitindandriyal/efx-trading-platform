@@ -5,11 +5,12 @@ import io.aeron.Publication;
 import io.aeron.Subscription;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import play.lab.model.sbe.QuoteDecoder;
+import play.lab.model.sbe.QuoteMessageDecoder;
 import pub.lab.trading.common.config.StreamId;
 import pub.lab.trading.common.lifecycle.Worker;
 import pub.lab.trading.common.model.ClientTierLevel;
 import pub.lab.trading.common.model.pricing.QuoteView;
+import pub.lab.trading.common.model.pricing.QuoteWriter;
 
 import java.util.EnumMap;
 
@@ -19,6 +20,7 @@ public class MarketDataConsumer implements Worker {
     private final Subscription quoteSub;
     private final EnumMap<ClientTierLevel, Publication> marketQuotePublications = new EnumMap<>(ClientTierLevel.class);
     private final EnumMap<ClientTierLevel, ClientTier> clientTierEnumMap = new EnumMap<>(ClientTierLevel.class);
+    private final EnumMap<ClientTierLevel, QuoteWriter> clientTierQuoteWriterEnumMap = new EnumMap<>(ClientTierLevel.class);
     private final QuoteView quoteView = new QuoteView();
 
     public MarketDataConsumer(final Aeron aeron) {
@@ -43,8 +45,10 @@ public class MarketDataConsumer implements Worker {
             double marketAsk;
 
             for (ClientTierLevel clientTierLevel : ClientTierLevel.values()) {
-                while(quoteView.getRung().hasNext()) {
-                    QuoteDecoder.RungDecoder nextRung = quoteView.getRung().next();
+                QuoteWriter quoteWriter = clientTierQuoteWriterEnumMap.get(clientTierLevel);
+
+                while (quoteView.getRung().hasNext()) {
+                    QuoteMessageDecoder.RungDecoder nextRung = quoteView.getRung().next();
                     double mid = (nextRung.bid() + nextRung.ask()) / 2.0;
                     double volFactor = Math.log10(nextRung.volume() / 1_000_000.0 + 1.0);
                     ClientTier clientTier = clientTierEnumMap.get(clientTierLevel);

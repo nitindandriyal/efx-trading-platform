@@ -1,40 +1,28 @@
-/*
- * Copyright 2015-2024 (c) CoralBlocks LLC - http://www.coralblocks.com
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
- * either express or implied. See the License for the specific language
- * governing permissions and limitations under the License.
- */
 package pub.lab.trading.common.lifecycle;
 
 import java.util.Arrays;
+import java.util.function.Supplier;
 
 public class ArrayObjectPool<E> {
 
+    private final String name;
+    private final Supplier<E> factory;
+    private final float growthFactor;
     private Object[] array;
     private int pointer = 0;
-    private final ObjectFactory<E> factory;
-    private final float growthFactor;
 
-    public ArrayObjectPool(int initialCapacity, ObjectFactory<E> factory) {
-        this(initialCapacity, factory, 1.5f);
+    public ArrayObjectPool(String name, Supplier<E> factory) {
+        this(name, 64, factory, 1.5f);
     }
 
-    public ArrayObjectPool(int initialCapacity, ObjectFactory<E> factory, float growthFactor) {
+    public ArrayObjectPool(String name, int initialCapacity, Supplier<E> factory, float growthFactor) {
+        this.name = name;
         this.factory = factory;
         this.growthFactor = growthFactor;
         check(growthFactor);
         this.array = new Object[initialCapacity];
         for (int i = 0; i < array.length; i++) {
-            this.array[i] = factory.create();
+            this.array[i] = factory.get();
         }
     }
 
@@ -86,7 +74,7 @@ public class ArrayObjectPool<E> {
         @SuppressWarnings("unchecked")
         E toReturn = (E) array[pointer];
         if (toReturn == null) {
-            toReturn = factory.create();
+            toReturn = factory.get();
         } else {
             this.array[pointer] = null;
         }
@@ -106,5 +94,9 @@ public class ArrayObjectPool<E> {
 
     private void ensureNotNull(E object) {
         if (object == null) throw new IllegalArgumentException("Cannot release null!");
+    }
+
+    public String getName() {
+        return name;
     }
 }

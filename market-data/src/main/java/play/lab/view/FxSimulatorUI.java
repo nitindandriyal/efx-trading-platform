@@ -2,7 +2,6 @@ package play.lab.view;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
-
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.notification.Notification;
@@ -12,10 +11,10 @@ import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.PostConstruct;
-import play.lab.components.EditableConfigRow;
 import play.lab.FxPriceGenerator;
 import play.lab.FxTickScheduler;
 import play.lab.TickThrottle;
+import play.lab.components.EditableConfigRow;
 import play.lab.marketdata.model.MarketDataTick;
 
 @Route("")
@@ -87,7 +86,7 @@ public class FxSimulatorUI extends VerticalLayout {
     @PostConstruct
     private void init() {
         grid.setColumns("pair", "mid", "bid", "ask", "timestamp");
-        configGrid.setColumns("ccy","volatility", "spread");
+        configGrid.setColumns("ccy", "volatility", "spread");
         configGrid.setItems(generator.generateAllConfig());
         // Enable polling every 1 second
         UI.getCurrent().setPollInterval(1000);

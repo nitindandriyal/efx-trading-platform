@@ -9,16 +9,6 @@ public enum StreamId {
     HEARTBEAT(800),
     CONFIG_STREAM(900);
 
-    private final int code;
-
-    StreamId(int code) {
-        this.code = code;
-    }
-
-    public int getCode() {
-        return code;
-    }
-
     private static final Int2ObjectHashMap<StreamId> MAP = new Int2ObjectHashMap<>();
 
     static {
@@ -27,7 +17,17 @@ public enum StreamId {
         }
     }
 
+    private final int code;
+
+    StreamId(int code) {
+        this.code = code;
+    }
+
     public static StreamId fromCode(int code) {
         return MAP.get(code);
+    }
+
+    public int getCode() {
+        return code;
     }
 }

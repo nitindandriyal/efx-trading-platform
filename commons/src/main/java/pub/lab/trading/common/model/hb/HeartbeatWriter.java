@@ -1,11 +1,11 @@
 package pub.lab.trading.common.model.hb;
 
 import org.agrona.MutableDirectBuffer;
-import play.lab.model.sbe.HeartbeatEncoder;
+import play.lab.model.sbe.HeartbeatMessageEncoder;
 import play.lab.model.sbe.MessageHeaderEncoder;
 
 public class HeartbeatWriter {
-    private final HeartbeatEncoder encoder = new HeartbeatEncoder();
+    private final HeartbeatMessageEncoder encoder = new HeartbeatMessageEncoder();
     private final MessageHeaderEncoder header = new MessageHeaderEncoder();
 
     public HeartbeatWriter wrap(MutableDirectBuffer buffer, int offset) {

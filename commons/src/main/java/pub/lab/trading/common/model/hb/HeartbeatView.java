@@ -1,10 +1,10 @@
 package pub.lab.trading.common.model.hb;
 
 import org.agrona.DirectBuffer;
-import play.lab.model.sbe.HeartbeatDecoder;
+import play.lab.model.sbe.HeartbeatMessageDecoder;
 
 public class HeartbeatView {
-    private final HeartbeatDecoder decoder = new HeartbeatDecoder();
+    private final HeartbeatMessageDecoder decoder = new HeartbeatMessageDecoder();
 
     public HeartbeatView wrap(DirectBuffer buffer, int offset, int blockLength, int version) {
         decoder.wrap(buffer, offset, blockLength, version);

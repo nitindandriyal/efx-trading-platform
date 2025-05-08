@@ -19,12 +19,12 @@ public class EditableConfigRow {
         return volatility;
     }
 
-    public double getSpread() {
-        return spread;
-    }
-
     public void setVolatility(double volatility) {
         this.volatility = volatility;
+    }
+
+    public double getSpread() {
+        return spread;
     }
 
     public void setSpread(double spread) {

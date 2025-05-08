@@ -3,13 +3,14 @@ package play.lab.marketdata.model;
 public class MarketDataTick {
     private String pair;
     private double mid, bid, ask;
-    private long timestamp;
+    private long valueDateEpoch, timestamp;
 
-    public MarketDataTick(String pair, double mid, double bid, double ask, long timestamp) {
+    public MarketDataTick(String pair, double mid, double bid, double ask, long valueDateEpoch, long timestamp) {
         this.pair = pair;
         this.mid = mid;
         this.bid = bid;
         this.ask = ask;
+        this.valueDateEpoch = valueDateEpoch;
         this.timestamp = timestamp;
     }
 
@@ -51,5 +52,13 @@ public class MarketDataTick {
 
     public void setTimestamp(long timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public long getValueDateEpoch() {
+        return valueDateEpoch;
+    }
+
+    public void setValueDateEpoch(long valueDateEpoch) {
+        this.valueDateEpoch = valueDateEpoch;
     }
 }

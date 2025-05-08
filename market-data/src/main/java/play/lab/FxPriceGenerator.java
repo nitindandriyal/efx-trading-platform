@@ -4,6 +4,7 @@ package play.lab;
 import play.lab.components.EditableConfigRow;
 import play.lab.marketdata.model.MarketDataTick;
 import play.lab.marketdata.transport.QuotePublisher;
+import pub.lab.trading.common.util.HolidayCalendar;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -66,7 +67,8 @@ public class FxPriceGenerator {
     private double inferVolatility(String pair) {
         String base = pair.substring(0, 3);
         String quote = pair.substring(3);
-        return (configOverridesByCcy.getOrDefault(base, defaultConfig).getVolatility() + configOverridesByCcy.getOrDefault(quote, defaultConfig).getVolatility()) / 2;
+        return (configOverridesByCcy.getOrDefault(base, defaultConfig).getVolatility()
+                + configOverridesByCcy.getOrDefault(quote, defaultConfig).getVolatility()) / 2;
     }
 
     private double inferSpread(String pair) {
@@ -96,7 +98,7 @@ public class FxPriceGenerator {
 
     public void updateModel(String symbol, double vol, double spread) {
         String base = symbol.substring(0, 3);
-        configOverridesByCcy.compute( base, (k, oldValue) -> {
+        configOverridesByCcy.compute(base, (k, oldValue) -> {
             if (oldValue == null) {
                 return new EditableConfigRow(base, vol, spread);
             } else {
@@ -106,7 +108,7 @@ public class FxPriceGenerator {
             }
         });
         String term = symbol.substring(3);
-        configOverridesByCcy.compute( term, (k, oldValue) -> {
+        configOverridesByCcy.compute(term, (k, oldValue) -> {
             if (oldValue == null) {
                 return new EditableConfigRow(term, vol, spread);
             } else {
@@ -192,7 +194,7 @@ public class FxPriceGenerator {
             double z = ThreadLocalRandom.current().nextGaussian();
             price *= Math.exp(-0.5 * volatility * volatility * dt + volatility * Math.sqrt(dt) * z);
             double spread = price * this.spread / 10000;
-            return new MarketDataTick(symbol, price, (price - spread) * 0.5, (price + spread) * 0.5, now);
+            return new MarketDataTick(symbol, price, (price - spread) * 0.5, (price + spread) * 0.5, HolidayCalendar.getValueDate(), now);
         }
     }
 }

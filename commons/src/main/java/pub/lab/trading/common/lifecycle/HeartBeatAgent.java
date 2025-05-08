@@ -6,7 +6,7 @@ import io.aeron.Subscription;
 import org.agrona.concurrent.IdleStrategy;
 import org.agrona.concurrent.UnsafeBuffer;
 import org.agrona.concurrent.YieldingIdleStrategy;
-import play.lab.model.sbe.HeartbeatDecoder;
+import play.lab.model.sbe.HeartbeatMessageDecoder;
 import pub.lab.trading.common.config.AppId;
 import pub.lab.trading.common.config.StreamId;
 import pub.lab.trading.common.model.hb.HeartbeatView;
@@ -39,7 +39,7 @@ public class HeartBeatAgent implements Worker {
     @Override
     public int doWork() throws Exception {
         int h = heartbeatSub.poll((buf, offset, len, hdr) -> {
-            hbView.wrap(buf, offset + 8, HeartbeatDecoder.BLOCK_LENGTH, HeartbeatDecoder.SCHEMA_VERSION);
+            hbView.wrap(buf, offset + 8, HeartbeatMessageDecoder.BLOCK_LENGTH, HeartbeatMessageDecoder.SCHEMA_VERSION);
         }, 10);
 
         long now = System.currentTimeMillis();
