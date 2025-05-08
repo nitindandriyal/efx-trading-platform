@@ -157,26 +157,6 @@ The **first quote slow path** refers to initial latency spikes when processing t
 - **Caching**: Stores quotes during backpressure, ensuring availability.
 - **Metrics**: `failedBorrows`, `throttleCount`, `contentionCount`, and `BufferTracker` aid tuning.
 
-## Contributing
-
-1. **Fork the Repository**:
-   ```bash
-   git fork https://github.com/nitindandriyal/fx-trading-platform.git
-   ```
-
-2. **Create a Branch**:
-   ```bash
-   git checkout -b feature/your-feature
-   ```
-
-3. **Submit a Pull Request**:
-    - Ensure code passes tests (`mvn test`).
-    - Follow Java coding conventions and include Javadoc.
-    - Describe changes in the PR, referencing relevant issues.
-
-4. **Report Issues**:
-    - Use the GitHub Issues tab to report bugs or suggest enhancements.
-
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](https://github.com/nitindandriyal/fx-trading-platform/blob/main/LICENSE) file for details.
