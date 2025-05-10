@@ -18,6 +18,9 @@ public class ClientTierConfig {
     private volatile boolean accessToCrosses; // BooleanEnum
     private volatile double creditLimitUsd; // double
     private volatile short tierPriority; // uint8
+    private volatile double tierSkew; // double
+    private volatile double clientTierSkew; // double
+    private volatile double signal; // double
 
     public ClientTierConfig init(
             int tierId,
@@ -34,7 +37,10 @@ public class ClientTierConfig {
             boolean limitOrderEnabled,
             boolean accessToCrosses,
             double creditLimitUsd,
-            short tierPriority
+            short tierPriority,
+            double tierSkew,
+            double clientTierSkew,
+            double signal
     ) {
         validate(tierName, markupBps, spreadTighteningFactor, quoteThrottleMs, latencyProtectionMs,
                 quoteExpiryMs, minNotional, maxNotional, pricePrecision, creditLimitUsd, tierPriority);
@@ -53,6 +59,9 @@ public class ClientTierConfig {
         this.accessToCrosses = accessToCrosses;
         this.creditLimitUsd = creditLimitUsd;
         this.tierPriority = tierPriority;
+        this.tierSkew = tierSkew;
+        this.clientTierSkew = clientTierSkew;
+        this.signal = signal;
         return this;
     }
 
@@ -70,7 +79,10 @@ public class ClientTierConfig {
             boolean limitOrderEnabled,
             boolean accessToCrosses,
             double creditLimitUsd,
-            short tierPriority
+            short tierPriority,
+            double tierSkew,
+            double clientTierSkew,
+            double signal
     ) {
         validate(tierName, markupBps, spreadTighteningFactor, quoteThrottleMs, latencyProtectionMs,
                 quoteExpiryMs, minNotional, maxNotional, pricePrecision, creditLimitUsd, tierPriority);
@@ -88,6 +100,9 @@ public class ClientTierConfig {
         this.accessToCrosses = accessToCrosses;
         this.creditLimitUsd = creditLimitUsd;
         this.tierPriority = tierPriority;
+        this.tierSkew = tierSkew;
+        this.clientTierSkew = clientTierSkew;
+        this.signal = signal;
         return this;
     }
 
@@ -200,10 +215,23 @@ public class ClientTierConfig {
         return tierPriority;
     }
 
+    public double tierSkew() {
+        return tierSkew;
+    }
+
+    public double clientTierSkew() {
+        return clientTierSkew;
+    }
+
+    public double signal() {
+        return signal;
+    }
+
     @Override
     public String toString() {
-        return "ClientTierConfig[tierId=" + tierId +
-                ", tierName=" + tierName +
+        return "ClientTierConfig{" +
+                "tierId=" + tierId +
+                ", tierName='" + tierName + '\'' +
                 ", markupBps=" + markupBps +
                 ", spreadTighteningFactor=" + spreadTighteningFactor +
                 ", quoteThrottleMs=" + quoteThrottleMs +
@@ -216,6 +244,10 @@ public class ClientTierConfig {
                 ", limitOrderEnabled=" + limitOrderEnabled +
                 ", accessToCrosses=" + accessToCrosses +
                 ", creditLimitUsd=" + creditLimitUsd +
-                ", tierPriority=" + tierPriority + "]";
+                ", tierPriority=" + tierPriority +
+                ", tierSkew=" + tierSkew +
+                ", clientTierSkew=" + clientTierSkew +
+                ", signal=" + signal +
+                '}';
     }
 }
