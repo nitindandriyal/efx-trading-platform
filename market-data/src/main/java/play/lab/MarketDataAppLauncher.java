@@ -1,15 +1,23 @@
 package play.lab;
 
-import com.vaadin.flow.component.page.AppShellConfigurator;
-import com.vaadin.flow.theme.Theme;
-import com.vaadin.flow.theme.lumo.Lumo;
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.agrona.concurrent.AgentRunner;
+import org.agrona.concurrent.BackoffIdleStrategy;
+import play.lab.marketdata.generator.FxPriceGenerator;
+import pub.lab.trading.common.lifecycle.MultiStreamPoller;
+import pub.lab.trading.common.lifecycle.Worker;
 
-@SpringBootApplication
-@Theme(variant = Lumo.DARK)
-public class MarketDataAppLauncher implements AppShellConfigurator {
+public class MarketDataAppLauncher {
+
     public static void main(String[] args) {
-        SpringApplication.run(MarketDataAppLauncher.class, args);
+        AgentRunner agentRunner = new AgentRunner(new BackoffIdleStrategy(),
+                Throwable::printStackTrace,
+                null,
+                new MultiStreamPoller(
+                        "pricing-engine-poller",
+                        new Worker[]{
+                                new FxPriceGenerator()
+                        }
+                ));
+        AgentRunner.startOnThread(agentRunner);
     }
 }

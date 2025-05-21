@@ -1,14 +1,22 @@
 # Config Service for FX Trading Platform
 
-The `config-service` is a core component of the [FX Trading Platform](https://github.com/nitindandriyal/fx-trading-platform), responsible for managing and distributing configuration data for the platform's services, such as the pricing engine and order execution systems. It provides a user-friendly **Vaadin GUI** for administrators to create, update, and delete configurations, stores these configurations in **Aeron archives**, and ensures reliable delivery to other services via snapshots on startup and real-time updates thereafter.
+The `config-service` is a core component of
+the [FX Trading Platform](https://github.com/nitindandriyal/fx-trading-platform), responsible for managing and
+distributing configuration data for the platform's services, such as the pricing engine and order execution systems. It
+provides a user-friendly **Vaadin GUI** for administrators to create, update, and delete configurations, stores these
+configurations in **Aeron archives**, and ensures reliable delivery to other services via snapshots on startup and
+real-time updates thereafter.
 
 ## Features
 
-- **Vaadin GUI**: Intuitive web-based interface for managing configurations, including currency pairs (e.g., EUR/USD) and client tiers (e.g., GOLD, SILVER).
+- **Vaadin GUI**: Intuitive web-based interface for managing configurations, including currency pairs (e.g., EUR/USD)
+  and client tiers (e.g., GOLD, SILVER).
 - **Aeron Archives**: Persists configuration data in Aeron archives for durability and fault tolerance.
-- **Snapshot Replay**: On service startup, replays configuration snapshots to initialize services like the pricing engine.
+- **Snapshot Replay**: On service startup, replays configuration snapshots to initialize services like the pricing
+  engine.
 - **Real-Time Updates**: Publishes configuration updates to services via Aeron's high-performance messaging.
-- **SBE Messaging**: Uses Simple Binary Encoding (SBE) for efficient configuration messages, defined in `QuoteSchema.xml`.
+- **SBE Messaging**: Uses Simple Binary Encoding (SBE) for efficient configuration messages, defined in
+  `QuoteSchema.xml`.
 - **Scalability**: Designed to handle high-frequency updates with low latency, suitable for FX trading environments.
 
 ## Architecture
@@ -26,12 +34,14 @@ The `config-service` integrates with the FX trading platform as follows:
     - Archives are stored locally or in a distributed setup, depending on configuration.
 
 3. **Distribution**:
-    - On startup, the service replays a snapshot of all configurations to subscribing services (e.g., `Pricer`) via Aeron channel `aeron:ipc?term-buffer-length=33554432` (stream ID: `2000`).
+    - On startup, the service replays a snapshot of all configurations to subscribing services (e.g., `Pricer`) via
+      Aeron channel `aeron:ipc?term-buffer-length=33554432` (stream ID: `2000`).
     - Real-time updates are published as new SBE messages when configurations change.
     - A `ConfigLoadCompleteMessage` signals the end of the initial snapshot.
 
 4. **Integration**:
-    - Consumes by services like `Pricer` (via `CurrencyConfigCache`), which subscribe to the config channel to initialize and update their caches.
+    - Consumes by services like `Pricer` (via `CurrencyConfigCache`), which subscribe to the config channel to
+      initialize and update their caches.
     - Supports fault-tolerant design with Aeron’s replay mechanism.
 
 ## Prerequisites
@@ -131,11 +141,14 @@ vaadin.admin.password=password
 
 The `config-service` is designed to work with other platform components:
 
-- **Pricer**: Subscribes to configuration updates via `CurrencyConfigCache` (stream ID: `2000`). Configurations initialize currency and tier caches for quote transformations.
-- **Order Execution**: Uses `ClientTierConfig` fields like `minNotional`, `maxNotional`, and `creditLimitUsd` for order validation.
+- **Pricer**: Subscribes to configuration updates via `CurrencyConfigCache` (stream ID: `2000`). Configurations
+  initialize currency and tier caches for quote transformations.
+- **Order Execution**: Uses `ClientTierConfig` fields like `minNotional`, `maxNotional`, and `creditLimitUsd` for order
+  validation.
 - **Schema**: All services share `QuoteSchema.xml` for consistent SBE messaging.
 
 To integrate:
+
 1. Ensure all services use the same `QuoteSchema.xml` (version 6 or higher).
 2. Configure services to subscribe to `aeron:ipc?term-buffer-length=33554432` (stream ID: `2000`).
 3. Replay archived configurations during service initialization.

@@ -3,11 +3,11 @@ package pub.lab.trading.common.config;
 import org.agrona.collections.Int2ObjectHashMap;
 
 public enum StreamId {
-    RAW_QUOTE(100),
-    MARKET_QUOTE(200),
-    CLIENT_QUOTE(300),
-    HEARTBEAT(800),
-    CONFIG_STREAM(900);
+    RAW_QUOTE(1000),
+    MARKET_QUOTE(2000),
+    CLIENT_QUOTE(3000),
+    HEARTBEAT(8000),
+    CONFIG_STREAM(9000);
 
     private static final Int2ObjectHashMap<StreamId> MAP = new Int2ObjectHashMap<>();
 

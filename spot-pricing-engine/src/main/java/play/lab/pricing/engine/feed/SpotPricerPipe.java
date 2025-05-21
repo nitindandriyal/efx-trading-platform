@@ -3,17 +3,19 @@ package play.lab.pricing.engine.feed;
 import io.aeron.Aeron;
 import io.aeron.Publication;
 import io.aeron.Subscription;
+import io.aeron.logbuffer.FragmentHandler;
+import org.agrona.DirectBuffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import play.lab.model.sbe.QuoteMessageDecoder;
+import pub.lab.trading.common.config.AeronConfigs;
 import pub.lab.trading.common.config.StreamId;
 import pub.lab.trading.common.config.caches.ClientTierConfig;
 import pub.lab.trading.common.config.caches.ClientTierConfigCache;
 import pub.lab.trading.common.config.caches.ConfigAgent;
 import pub.lab.trading.common.lifecycle.Worker;
 import pub.lab.trading.common.model.ClientTierLevel;
+import pub.lab.trading.common.model.pricing.QuoteMessageWriter;
 import pub.lab.trading.common.model.pricing.QuoteView;
-import pub.lab.trading.common.model.pricing.QuoteWriter;
 
 import java.util.EnumMap;
 
@@ -23,50 +25,57 @@ public class SpotPricerPipe implements Worker {
     private final Subscription quoteSub;
     private final EnumMap<ClientTierLevel, Publication> marketQuotePublications = new EnumMap<>(ClientTierLevel.class);
     private final ClientTierConfigCache clientTierConfigCache;
-    private final EnumMap<ClientTierLevel, QuoteWriter> clientTierQuoteWriterEnumMap = new EnumMap<>(ClientTierLevel.class);
+    private final EnumMap<ClientTierLevel, QuoteMessageWriter> clientTierQuoteWriterEnumMap = new EnumMap<>(ClientTierLevel.class);
     private final QuoteView quoteView = new QuoteView();
+    private final FragmentHandler fragmentHandler;
 
     public SpotPricerPipe(final Aeron aeron, final ConfigAgent configAgent) {
-        this.quoteSub = aeron.addSubscription("aeron:ipc", StreamId.RAW_QUOTE.getCode());
         this.clientTierConfigCache = configAgent.getClientTierConfigCache();
+        this.fragmentHandler = (buf, offset, len, hdr) -> consumeQuotes(buf, offset);
+        this.quoteSub = aeron.addSubscription(AeronConfigs.LIVE_CHANNEL,
+                StreamId.RAW_QUOTE.getCode(),
+                image -> LOGGER.info("Image available: sessionId={}, channel={}, streamId={}",
+                        image.sessionId(), image.sourceIdentity(), image.subscription().streamId()),
+                image -> LOGGER.warn("Image unavailable: sessionId={}, channel={}, streamId={}",
+                        image.sessionId(), image.sourceIdentity(), image.subscription().streamId())
+        );
         for (ClientTierLevel clientTierLevel : ClientTierLevel.values()) {
-            marketQuotePublications.put(clientTierLevel, aeron.addExclusivePublication("aeron:ipc",
+            marketQuotePublications.put(clientTierLevel, aeron.addExclusivePublication(AeronConfigs.LIVE_CHANNEL,
                     StreamId.MARKET_QUOTE.getCode() + clientTierLevel.getId())
             );
+        }
+        LOGGER.info("Connected Aeron Dir : {} {} {}", aeron.context().aeronDirectory(), quoteSub.channel(), quoteSub.streamId());
+    }
+
+    private void consumeQuotes(DirectBuffer buf, int offset) {
+        quoteView.wrap(buf, offset + 8);
+
+        String symbol = quoteView.getSymbol();
+        long timestamp = quoteView.priceCreationTimestamp();
+        long tenor = quoteView.getTenor();
+        long valueDate = quoteView.getValueDate();
+        long clientTier = quoteView.getClientTier();
+
+        for (QuoteView.Rung rung : quoteView.getRungs()) {
+            double mid = (rung.getBid() + rung.getAsk()) * 0.5;
+            double volFactor = Math.log10(rung.getVolume() / 1_000_000.0 + 1.0);
+            double spreadAdjust = (1 + 0.05 * volFactor);
+            double markupAdjust =  (1 + 0.1 * volFactor);
+            double adjustment = (markupAdjust + volFactor);
+            double bid = mid - (spreadAdjust * 0.5) - adjustment;
+            double ask = mid + (spreadAdjust * 0.5) + adjustment;
+
+            LOGGER.info("symbol={}, timestamp={}, tenor={}, valueDate={}, clientTier={}, bid={}, ask={}, volume={}",
+                    symbol, timestamp, tenor, valueDate, clientTier, bid, ask, rung.getVolume());
         }
     }
 
     @Override
-    public void onStart() {
-        Worker.super.onStart();
-    }
-
-    @Override
     public int doWork() {
-        return quoteSub.poll((buf, offset, len, hdr) -> {
-            quoteView.wrap(buf, offset);
-            double marketBid = quoteView.priceCreationTimestamp();
-            double marketAsk;
-
-            for (ClientTierLevel clientTierLevel : ClientTierLevel.values()) {
-                QuoteWriter quoteWriter = clientTierQuoteWriterEnumMap.get(clientTierLevel);
-
-                while (quoteView.getRung().hasNext()) {
-                    QuoteMessageDecoder.RungDecoder nextRung = quoteView.getRung().next();
-                    double mid = (nextRung.bid() + nextRung.ask()) / 2.0;
-                    double volFactor = Math.log10(nextRung.volume() / 1_000_000.0 + 1.0);
-                    ClientTierConfig clientTier = clientTierConfigCache.get(clientTierLevel.getId());
-                    double spreadAdjust = clientTier.spreadTighteningFactor() * (1 + 0.05 * volFactor);
-                    double markupAdjust = clientTier.markupBps() * (1 + 0.1 * volFactor);
-                    double skewAdjust = clientTier.tierSkew() * volFactor;
-                    double adjustment = clientTier.signal() * (markupAdjust + skewAdjust);
-                    double bid = mid - (spreadAdjust / 2.0) - adjustment;
-                    double ask = mid + (spreadAdjust / 2.0) + adjustment;
-
-                    LOGGER.info("Received quote : {}", quoteView.priceCreationTimestamp());
-                }
-            }
-        }, 10);
+        if (quoteSub.isConnected()) {
+            return quoteSub.poll(fragmentHandler, 10);
+        }
+        return 0;
     }
 
     @Override

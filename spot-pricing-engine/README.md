@@ -50,7 +50,7 @@ throttling, quote caching, and garbage-collection-free (GC-free) operation to mi
        <dependency>
            <groupId>io.aeron</groupId>
            <artifactId>aeron-all</artifactId>
-           <version>1.42.0</version>
+           <version>1.47.4</version>
        </dependency>
        <dependency>
            <groupId>org.agrona</groupId>

@@ -1,33 +1,40 @@
 // simplified for brevity
-package play.lab;
+package play.lab.marketdata.generator;
 
-import play.lab.components.EditableConfigRow;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import play.lab.TickThrottle;
 import play.lab.marketdata.model.MarketDataTick;
-import play.lab.marketdata.transport.QuotePublisher;
+import play.lab.marketdata.model.RawPriceConfig;
+import pub.lab.trading.common.lifecycle.Worker;
 import pub.lab.trading.common.util.HolidayCalendar;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
-public class FxPriceGenerator {
+public class FxPriceGenerator implements Worker {
+    private static final Logger LOGGER = LoggerFactory.getLogger(FxPriceGenerator.class);
+
     private static final double DEFAULT_SPREAD_BP = 0.5;
     private static final double DEFAULT_VOLATILITY = 0.5;
     private final Map<String, PairModel> pairs = new HashMap<>();
-    private final Map<String, EditableConfigRow> configOverridesByCcy = new ConcurrentHashMap<>();
-    private final EditableConfigRow defaultConfig = new EditableConfigRow("XXX", DEFAULT_VOLATILITY, DEFAULT_SPREAD_BP);
+    private final Map<String, RawPriceConfig> configOverridesByCcy = new ConcurrentHashMap<>();
+    private final RawPriceConfig defaultConfig = new RawPriceConfig("XXX", DEFAULT_VOLATILITY, DEFAULT_SPREAD_BP);
     private final QuotePublisher aeronPub = new QuotePublisher();
+    private final TickThrottle throttle = new TickThrottle(1000);
 
     public FxPriceGenerator() {
         // Volatility overrides (annualized)
-        configOverridesByCcy.put("USD", new EditableConfigRow("USD", 0.020, 0.5)); // US Dollar
-        configOverridesByCcy.put("EUR", new EditableConfigRow("EUR", 0.018, 0.5)); // Euro
-        configOverridesByCcy.put("JPY", new EditableConfigRow("JPY", 0.030, 1.0)); // Japanese Yen
-        configOverridesByCcy.put("GBP", new EditableConfigRow("GBP", 0.025, 0.6)); // British Pound
-        configOverridesByCcy.put("CHF", new EditableConfigRow("CHF", 0.017, 0.4)); // Swiss Franc
-        configOverridesByCcy.put("AUD", new EditableConfigRow("AUD", 0.028, 0.6)); // Australian Dollar
-        configOverridesByCcy.put("NZD", new EditableConfigRow("NZD", 0.030, 0.7)); // New Zealand Dollar
-        configOverridesByCcy.put("CAD", new EditableConfigRow("CAD", 0.022, 0.5)); // Canadian Dollar
+        configOverridesByCcy.put("USD", new RawPriceConfig("USD", 0.020, 0.5)); // US Dollar
+        configOverridesByCcy.put("EUR", new RawPriceConfig("EUR", 0.018, 0.5)); // Euro
+        configOverridesByCcy.put("JPY", new RawPriceConfig("JPY", 0.030, 1.0)); // Japanese Yen
+        configOverridesByCcy.put("GBP", new RawPriceConfig("GBP", 0.025, 0.6)); // British Pound
+        configOverridesByCcy.put("CHF", new RawPriceConfig("CHF", 0.017, 0.4)); // Swiss Franc
+        configOverridesByCcy.put("AUD", new RawPriceConfig("AUD", 0.028, 0.6)); // Australian Dollar
+        configOverridesByCcy.put("NZD", new RawPriceConfig("NZD", 0.030, 0.7)); // New Zealand Dollar
+        configOverridesByCcy.put("CAD", new RawPriceConfig("CAD", 0.022, 0.5)); // Canadian Dollar
 
         // Default major pairs and crosses
         add("EURUSD", 1.1000);
@@ -59,8 +66,8 @@ public class FxPriceGenerator {
     }
 
     public void addSymbol(String symbol, double initialPrice, double volatility, double spread) {
-        configOverridesByCcy.put(symbol.substring(0, 3), new EditableConfigRow(symbol.substring(0, 3), volatility, spread));
-        configOverridesByCcy.put(symbol.substring(3), new EditableConfigRow(symbol.substring(0, 3), volatility, spread));
+        configOverridesByCcy.put(symbol.substring(0, 3), new RawPriceConfig(symbol.substring(0, 3), volatility, spread));
+        configOverridesByCcy.put(symbol.substring(3), new RawPriceConfig(symbol.substring(0, 3), volatility, spread));
         pairs.put(symbol, new PairModel(symbol, initialPrice, volatility, spread));
     }
 
@@ -100,7 +107,7 @@ public class FxPriceGenerator {
         String base = symbol.substring(0, 3);
         configOverridesByCcy.compute(base, (k, oldValue) -> {
             if (oldValue == null) {
-                return new EditableConfigRow(base, vol, spread);
+                return new RawPriceConfig(base, vol, spread);
             } else {
                 oldValue.setSpread(spread);
                 oldValue.setVolatility(vol);
@@ -110,7 +117,7 @@ public class FxPriceGenerator {
         String term = symbol.substring(3);
         configOverridesByCcy.compute(term, (k, oldValue) -> {
             if (oldValue == null) {
-                return new EditableConfigRow(term, vol, spread);
+                return new RawPriceConfig(term, vol, spread);
             } else {
                 oldValue.setSpread(spread);
                 oldValue.setVolatility(vol);
@@ -139,7 +146,7 @@ public class FxPriceGenerator {
         return ticks;
     }
 
-    public List<EditableConfigRow> generateAllConfig() {
+    public List<RawPriceConfig> generateAllConfig() {
         return new ArrayList<>(configOverridesByCcy.values());
     }
 
@@ -149,6 +156,17 @@ public class FxPriceGenerator {
             throw new IllegalArgumentException("Unknown symbol: " + symbol);
         }
         return model.nextTick(now, dtSeconds);
+    }
+
+    @Override
+    public int doWork() {
+        generateAll(System.nanoTime(), throttle.getDtSeconds());
+        return 1;
+    }
+
+    @Override
+    public String roleName() {
+        return "";
     }
 
     private static class PairModel {

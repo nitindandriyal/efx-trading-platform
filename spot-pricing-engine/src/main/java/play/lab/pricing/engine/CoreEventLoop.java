@@ -6,6 +6,7 @@ import org.agrona.concurrent.IdleStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import play.lab.pricing.engine.feed.SpotPricerPipe;
+import pub.lab.trading.common.config.AeronConfigs;
 import pub.lab.trading.common.config.AppId;
 import pub.lab.trading.common.config.caches.ConfigAgent;
 import pub.lab.trading.common.lifecycle.HeartBeatAgent;
@@ -20,8 +21,7 @@ public class CoreEventLoop {
     private final Aeron aeron;
 
     public CoreEventLoop(final IdleStrategy idleStrategy, final long heartbeatIntervalMs) {
-        String aeronDir = System.getProperty("aeron.base.path") + "/trading";
-        this.aeron = Aeron.connect(new Aeron.Context().aeronDirectoryName(aeronDir));
+        this.aeron = Aeron.connect(new Aeron.Context().aeronDirectoryName(AeronConfigs.AERON_LIVE_DIR));
         ConfigAgent configAgent = new ConfigAgent(aeron);
         agentRunner = new AgentRunner(idleStrategy, Throwable::printStackTrace, null, new MultiStreamPoller(
                 "pricing-engine-poller",

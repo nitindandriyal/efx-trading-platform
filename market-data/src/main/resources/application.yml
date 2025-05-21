@@ -1,8 +1,0 @@
-server:
-  port: 8080
-
-# Enable Vaadin development mode features
-vaadin:
-  launch-browser: true
-  productionMode: false
-

@@ -7,6 +7,7 @@ import org.agrona.concurrent.IdleStrategy;
 import org.agrona.concurrent.UnsafeBuffer;
 import org.agrona.concurrent.YieldingIdleStrategy;
 import play.lab.model.sbe.HeartbeatMessageDecoder;
+import pub.lab.trading.common.config.AeronConfigs;
 import pub.lab.trading.common.config.AppId;
 import pub.lab.trading.common.config.StreamId;
 import pub.lab.trading.common.model.hb.HeartbeatView;
@@ -32,8 +33,8 @@ public class HeartBeatAgent implements Worker {
     public HeartBeatAgent(final AppId appId, final long heartbeatIntervalMs, final Aeron aeron) {
         this.appId = appId;
         this.heartbeatIntervalMs = heartbeatIntervalMs;
-        this.heartbeatSub = aeron.addSubscription("aeron:ipc", StreamId.HEARTBEAT.getCode());
-        this.heartbeatPub = aeron.addExclusivePublication("aeron:ipc", StreamId.HEARTBEAT.getCode());
+        this.heartbeatSub = aeron.addSubscription(AeronConfigs.LIVE_CHANNEL, StreamId.HEARTBEAT.getCode());
+        this.heartbeatPub = aeron.addExclusivePublication(AeronConfigs.LIVE_CHANNEL, StreamId.HEARTBEAT.getCode());
     }
 
     @Override

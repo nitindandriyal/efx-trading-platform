@@ -1,4 +1,4 @@
-package play.lab.components;
+package play.lab.config.service.components;
 
 public class EditableConfigRow {
     private final String ccy;

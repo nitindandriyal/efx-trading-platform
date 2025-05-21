@@ -18,7 +18,7 @@
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <vaadin.version>24.7.1</vaadin.version>
+        <vaadin.version>24.7.3</vaadin.version>
     </properties>
 
     <dependencies>
@@ -45,7 +45,11 @@
             <groupId>pub.lab.trading</groupId>
             <artifactId>commons</artifactId>
             <version>${project.version}</version>
-            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>pub.lab.trading</groupId>
+            <artifactId>market-data</artifactId>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
 

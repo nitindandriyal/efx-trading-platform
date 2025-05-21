@@ -1,4 +1,4 @@
-package play.lab.view;
+package play.lab.config.service;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
@@ -11,17 +11,11 @@ import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.PostConstruct;
-import play.lab.FxPriceGenerator;
-import play.lab.FxTickScheduler;
-import play.lab.TickThrottle;
-import play.lab.components.EditableConfigRow;
+import play.lab.config.service.components.EditableConfigRow;
 import play.lab.marketdata.model.MarketDataTick;
 
-@Route("")
+@Route("price")
 public class FxSimulatorUI extends VerticalLayout {
-
-    private final FxPriceGenerator generator = new FxPriceGenerator();
-    private final TickThrottle throttle = new TickThrottle(1000);
     private final Grid<MarketDataTick> grid = new Grid<>(MarketDataTick.class);
     private final Grid<EditableConfigRow> configGrid = new Grid<>(EditableConfigRow.class);
     private final TextField symbolField = new TextField("Symbol (e.g. EURUSD)");
@@ -34,8 +28,6 @@ public class FxSimulatorUI extends VerticalLayout {
 
         NumberField throttleField = new NumberField("Ticks/sec");
         throttleField.setStep(100);
-        throttleField.setValue((double) throttle.getTicksPerSecond());
-        throttleField.addValueChangeListener(e -> throttle.setTicksPerSecond(e.getValue().intValue()));
         add(throttleField, grid);
 
         symbolField.setPlaceholder("e.g. USDJPY");
@@ -53,7 +45,6 @@ public class FxSimulatorUI extends VerticalLayout {
         add(streamingPrices, grid);
         Span config = new Span("Currency Config");
         add(config, configGrid);
-        new FxTickScheduler(generator, throttle).start();
     }
 
     private Button getAddSymbolButton() {
@@ -70,7 +61,7 @@ public class FxSimulatorUI extends VerticalLayout {
                 return;
             }
 
-            generator.addSymbol(symbol, price, vol, spread);
+
             refreshGrid();
             Notification.show("Added: " + symbol);
 
@@ -87,7 +78,6 @@ public class FxSimulatorUI extends VerticalLayout {
     private void init() {
         grid.setColumns("pair", "mid", "bid", "ask", "timestamp");
         configGrid.setColumns("ccy", "volatility", "spread");
-        configGrid.setItems(generator.generateAllConfig());
         // Enable polling every 1 second
         UI.getCurrent().setPollInterval(1000);
 
@@ -100,7 +90,7 @@ public class FxSimulatorUI extends VerticalLayout {
 
     private void refreshGrid() {
         getUI().ifPresent(ui -> ui.access(() -> {
-            grid.setItems(generator.generateAll(System.currentTimeMillis(), throttle.getDtSeconds()));
+
         }));
     }
 }

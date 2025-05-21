@@ -1,25 +1,20 @@
 <configuration>
-
-    <!-- Tune ring buffer size for high throughput -->
-    <appender name="ASYNC_DISRUPTOR" class="net.logstash.logback.appender.LoggingEventAsyncDisruptorAppender">
-
-        <!-- Use high-performance JSON encoder (optional) -->
-        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
-            <includeMdcKeyName>context</includeMdcKeyName>
-            <includeMdcKeyName>traceId</includeMdcKeyName>
+    <!-- Console Appender -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSSSSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
-
-        <!-- Avoid blocking the caller thread -->
-        <discardingThreshold>0</discardingThreshold> <!-- 0 = always drop if full -->
-        <queueSize>16384</queueSize> <!-- Ring buffer size (must be power of 2) -->
-
-        <!-- Handle lost events (optional) -->
-        <eventLossReporter class="ch.qos.logback.core.status.OnConsoleStatusListener"/>
     </appender>
 
-    <!-- Root logger -->
-    <root level="INFO">
-        <appender-ref ref="ASYNC_DISRUPTOR"/>
-    </root>
+    <!-- Async Appender -->
+    <appender name="ASYNC" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="CONSOLE"/>
+        <queueSize>256</queueSize> <!-- Buffer size for log messages -->
+        <discardingThreshold>0</discardingThreshold> <!-- Don't discard logs if queue is full -->
+    </appender>
 
+    <!-- Root Logger -->
+    <root level="INFO">
+        <appender-ref ref="ASYNC"/>
+    </root>
 </configuration>
