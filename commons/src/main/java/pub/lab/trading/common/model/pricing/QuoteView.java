@@ -17,9 +17,9 @@ public class QuoteView {
     }
 
     // Accessor for symbol (string8)
-    public String getSymbol() {
+    public int getSymbol(final Appendable value) {
         // Assuming string8 is a fixed-length string of 8 bytes, adjust if variable-length
-        return decoder.symbol();
+        return decoder.getSymbol(value);
     }
 
     // Accessor for priceCreationTimestamp (uint64)

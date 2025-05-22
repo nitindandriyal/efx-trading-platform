@@ -23,7 +23,7 @@ public class QuoteMessageWriter {
         this.rungCounter = 0;
     }
 
-    public QuoteMessageWriter beginQuote(String symbol, long valueDate, long timestamp, long tenor, long clientTier, int totalRungCount) {
+    public QuoteMessageWriter beginQuote(CharSequence symbol, long valueDate, long timestamp, long tenor, long clientTier, int totalRungCount) {
         if (totalRungCount > MAX_LEVELS) {
             throw new IllegalArgumentException("Total rung count (" + totalRungCount + ") exceeds maximum (" + MAX_LEVELS + ")");
         }

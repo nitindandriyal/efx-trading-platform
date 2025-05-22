@@ -11,6 +11,7 @@ import play.lab.model.sbe.CurrencyConfigMessageDecoder;
 import play.lab.model.sbe.MessageHeaderDecoder;
 import pub.lab.trading.common.config.StreamId;
 import pub.lab.trading.common.lifecycle.Worker;
+import pub.lab.trading.common.model.ClientTierLevel;
 
 import static pub.lab.trading.common.config.AeronConfigs.CONFIG_CHANNEL;
 
@@ -36,6 +37,57 @@ public class ConfigAgent implements Worker {
         this.completeDecoder = new ConfigLoadCompleteMessageDecoder();
         this.buffer = new UnsafeBuffer(new byte[256]);
         this.isInitialLoadComplete = false;
+
+        defaultLoad();
+    }
+
+    private void defaultLoad() {
+        ClientTierConfig clientTierConfig = new ClientTierConfig();
+        short defaultValue = 1;
+        clientTierConfig.init(
+                ClientTierLevel.GOLD.getId(),
+                clientTierConfig.tierName(),
+                1.0,
+                1.0,
+                1L,
+                1L,
+                1L,
+                1.0,
+                1.0,
+                defaultValue,
+                true,
+                true,
+                true,
+                500_000_000,
+                defaultValue,
+                1.0,
+                1.0,
+                1.0
+        );
+        clientTierConfigCache.update(ClientTierLevel.GOLD, clientTierConfig);
+
+        clientTierConfig.init(
+                ClientTierLevel.SILVER.getId(),
+                clientTierConfig.tierName(),
+                1.5,
+                1.5,
+                1L,
+                1L,
+                1L,
+                1.0,
+                1.0,
+                defaultValue,
+                true,
+                true,
+                true,
+                500_000_000,
+                defaultValue,
+                1.5,
+                1.5,
+                1.5
+        );
+        clientTierConfigCache.update(ClientTierLevel.SILVER, clientTierConfig);
+
     }
 
     @Override

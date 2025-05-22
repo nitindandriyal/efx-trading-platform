@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import play.lab.model.sbe.BooleanEnum;
 import play.lab.model.sbe.ClientTierConfigMessageDecoder;
 import pub.lab.trading.common.lifecycle.ArrayObjectPool;
+import pub.lab.trading.common.model.ClientTierLevel;
 
 public class ClientTierConfigCache {
     private static final Logger LOGGER = LoggerFactory.getLogger(ClientTierConfigCache.class);
@@ -15,6 +16,10 @@ public class ClientTierConfigCache {
 
     public ClientTierConfig get(int tierId) {
         return clientTierConfigCache.get(tierId);
+    }
+
+    public void update(final ClientTierLevel clientTierLevel, final ClientTierConfig clientTier) {
+        clientTierConfigCache.put(clientTierLevel.getId(), clientTier);
     }
 
     public void update(final ClientTierConfigMessageDecoder clientTierDecoder) {
@@ -59,7 +64,7 @@ public class ClientTierConfigCache {
                     clientTierDecoder.clientTierSkew(),
                     clientTierDecoder.signal()
             );
-            clientTierConfigCache.put(config.tierPriority(), config);
+            clientTierConfigCache.put(config.tierId(), config);
             LOGGER.debug("Added clientTierConfigCache :: {}", config);
         }
     }

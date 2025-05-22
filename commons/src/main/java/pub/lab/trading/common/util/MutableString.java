@@ -1,7 +1,9 @@
 package pub.lab.trading.common.util;
 
+import java.io.IOException;
+
 @SuppressWarnings("NullableProblems")
-public class MutableString implements CharSequence {
+public class MutableString implements CharSequence, Appendable {
     private final StringBuilder builder;
 
     public MutableString() {
@@ -10,6 +12,11 @@ public class MutableString implements CharSequence {
 
     public MutableString(final CharSequence toInitWith) {
         builder = new StringBuilder(toInitWith);
+    }
+
+    public MutableString init() {
+        builder.setLength(0);
+        return this;
     }
 
     public MutableString init(final CharSequence toInitWith) {
@@ -21,6 +28,16 @@ public class MutableString implements CharSequence {
     public MutableString append(final CharSequence toAppend) {
         builder.append(toAppend);
         return this;
+    }
+
+    @Override
+    public Appendable append(CharSequence csq, int start, int end) throws IOException {
+        return builder.append(csq, start, end);
+    }
+
+    @Override
+    public Appendable append(char c) throws IOException {
+        return builder.append(c);
     }
 
     public MutableString reset() {

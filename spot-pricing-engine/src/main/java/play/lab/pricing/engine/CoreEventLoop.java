@@ -35,6 +35,7 @@ public class CoreEventLoop {
 
     void start() {
         AgentRunner.startOnThread(agentRunner);
+        LOGGER.info("Started {}", agentRunner.agent());
     }
 
     void stop() {
