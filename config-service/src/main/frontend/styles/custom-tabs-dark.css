@@ -1,0 +1,22 @@
+.custom-tabs {
+    border-radius: 8px 8px 0 0;
+    padding: 0;
+    margin: 0;
+    border-bottom: 2px solid #3b82f6;
+}
+
+.custom-tab {
+    padding: 12px 24px;
+    margin: 0;
+    border-radius: 6px 6px 0 0;
+    transition: background-color 0.3s ease, color 0.3s ease, transform 0.2s ease;
+    font-weight: 500;
+}
+
+.custom-tab.selected-tab {
+    background: #3b82f6; /* Vibrant blue for active tab */
+    color: #ffffff; /* White for contrast */
+    font-weight: 600;
+    transform: translateY(-2px);
+    border-bottom: 3px solid #ffffff; /* White underline to connect to content */
+}

@@ -9,13 +9,10 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.component.textfield.TextField;
-import com.vaadin.flow.router.Route;
-import jakarta.annotation.PostConstruct;
 import play.lab.config.service.components.EditableConfigRow;
 import play.lab.marketdata.model.MarketDataTick;
 
-@Route("price")
-public class FxSimulatorUI extends VerticalLayout {
+public class PricingConfigView extends VerticalLayout {
     private final Grid<MarketDataTick> grid = new Grid<>(MarketDataTick.class);
     private final Grid<EditableConfigRow> configGrid = new Grid<>(EditableConfigRow.class);
     private final TextField symbolField = new TextField("Symbol (e.g. EURUSD)");
@@ -23,7 +20,7 @@ public class FxSimulatorUI extends VerticalLayout {
     private final NumberField volField = new NumberField("Volatility");
     private final NumberField spreadField = new NumberField("Spread (bps)");
 
-    public FxSimulatorUI() {
+    public PricingConfigView() {
         setSizeFull();
 
         NumberField throttleField = new NumberField("Ticks/sec");
@@ -61,7 +58,6 @@ public class FxSimulatorUI extends VerticalLayout {
                 return;
             }
 
-
             refreshGrid();
             Notification.show("Added: " + symbol);
 
@@ -74,8 +70,7 @@ public class FxSimulatorUI extends VerticalLayout {
         return addSymbolButton;
     }
 
-    @PostConstruct
-    private void init() {
+    void init() {
         grid.setColumns("pair", "mid", "bid", "ask", "timestamp");
         configGrid.setColumns("ccy", "volatility", "spread");
         // Enable polling every 1 second
@@ -90,7 +85,7 @@ public class FxSimulatorUI extends VerticalLayout {
 
     private void refreshGrid() {
         getUI().ifPresent(ui -> ui.access(() -> {
-
+            grid.setItems(AeronService.INSTANCE.getPrices());
         }));
     }
 }

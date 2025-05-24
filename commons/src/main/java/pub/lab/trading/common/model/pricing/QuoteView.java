@@ -42,6 +42,22 @@ public class QuoteView {
         return decoder.clientTier();
     }
 
+    // Get all rungs as a list for easier processing
+    public List<Rung> getRungs() {
+        List<Rung> rungs = new ArrayList<>();
+        QuoteMessageDecoder.RungDecoder rungDecoder = decoder.rung();
+        while (rungDecoder.hasNext()) {
+            rungDecoder = rungDecoder.next();
+            rungs.add(new Rung(rungDecoder.bid(), rungDecoder.ask(), rungDecoder.volume()));
+        }
+        return rungs;
+    }
+
+    // Alternative: Direct access to RungDecoder for iterative processing
+    public QuoteMessageDecoder.RungDecoder getRung() {
+        return decoder.rung();
+    }
+
     // Class to represent a single rung (bid, ask, volume)
     public static class Rung {
         private final double bid;
@@ -65,22 +81,6 @@ public class QuoteView {
         public double getVolume() {
             return volume;
         }
-    }
-
-    // Get all rungs as a list for easier processing
-    public List<Rung> getRungs() {
-        List<Rung> rungs = new ArrayList<>();
-        QuoteMessageDecoder.RungDecoder rungDecoder = decoder.rung();
-        while (rungDecoder.hasNext()) {
-            rungDecoder = rungDecoder.next();
-            rungs.add(new Rung(rungDecoder.bid(), rungDecoder.ask(), rungDecoder.volume()));
-        }
-        return rungs;
-    }
-
-    // Alternative: Direct access to RungDecoder for iterative processing
-    public QuoteMessageDecoder.RungDecoder getRung() {
-        return decoder.rung();
     }
 
 }

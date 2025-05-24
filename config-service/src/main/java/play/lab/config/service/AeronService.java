@@ -7,6 +7,7 @@ import io.aeron.archive.client.AeronArchive;
 import io.aeron.archive.client.RecordingDescriptorConsumer;
 import io.aeron.archive.codecs.SourceLocation;
 import io.aeron.logbuffer.FragmentHandler;
+import org.agrona.DirectBuffer;
 import org.agrona.MutableDirectBuffer;
 import org.agrona.collections.LongArrayList;
 import org.agrona.collections.MutableLong;
@@ -16,14 +17,22 @@ import org.agrona.concurrent.UnsafeBuffer;
 import org.agrona.concurrent.ringbuffer.OneToOneRingBuffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import play.lab.marketdata.model.MarketDataTick;
 import play.lab.model.sbe.ClientTierConfigMessageDecoder;
+import play.lab.model.sbe.MessageHeaderDecoder;
+import play.lab.model.sbe.QuoteMessageDecoder;
 import pub.lab.trading.common.config.AeronConfigs;
 import pub.lab.trading.common.config.StreamId;
 import pub.lab.trading.common.model.config.ClientTierFlyweight;
+import pub.lab.trading.common.model.pricing.QuoteView;
+import pub.lab.trading.common.util.MutableString;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.agrona.concurrent.ringbuffer.RingBufferDescriptor.TRAILER_LENGTH;
@@ -38,10 +47,15 @@ public enum AeronService {
     private final List<ClientTierFlyweight> cache = new ArrayList<>();
     private final ClientTierFlyweight flyweight = new ClientTierFlyweight();
     private final OneToOneRingBuffer ringBuffer = new OneToOneRingBuffer(new UnsafeBuffer(ByteBuffer.allocateDirect(8192 + TRAILER_LENGTH)));
+    private final QuoteView quoteView = new QuoteView();
+    private final ConcurrentMap<String, MarketDataTick> latestTicks = new ConcurrentHashMap<>();
+    private final MutableString symbolMutableString = new MutableString();
     private Aeron aeron;
     private AeronArchive archive;
     private long publicationId;
     private Publication publication;
+    private Subscription subscription;
+    private Subscription quoteSub;
     private long existingRecordingId;
     private volatile boolean running = true;
 
@@ -148,38 +162,47 @@ public enum AeronService {
 
         int attempt = 1;
 
-        try (Subscription subscription = aeron.addSubscription(REPLAY_CHANNEL, StreamId.CONFIG_STREAM.getCode())) {
+        subscription = aeron.addSubscription(REPLAY_CHANNEL, StreamId.CONFIG_STREAM.getCode());
 
-            LOGGER.info("Started replay for recordingId={} on {}:{} (attempt {}/{})",
-                    recordingId, REPLAY_CHANNEL, StreamId.CONFIG_STREAM.getCode(), attempt, MAX_RETRIES);
+        LOGGER.info("Started replay for recordingId={} on {}:{} (attempt {}/{})",
+                recordingId, REPLAY_CHANNEL, StreamId.CONFIG_STREAM.getCode(), attempt, MAX_RETRIES);
 
-            FragmentHandler fragmentAssembler = (buffer1, offset, length1, header) -> {
-                try {
-                    LOGGER.debug("Received message: length={}, offset={}", length1, offset);
-                    flyweight.wrap(buffer1, offset);
-                    flyweight.validate();
-                    LOGGER.debug("Validated tier: tierId={}, tierName={}", flyweight.getTierId(), flyweight.getTierNameAsString());
-                    ClientTierFlyweight cachedFlyweight = new ClientTierFlyweight();
-                    MutableDirectBuffer cacheBuffer = new UnsafeBuffer(ByteBuffer.allocateDirect(ClientTierFlyweight.messageSize()));
-                    cacheBuffer.putBytes(0, buffer1, offset, ClientTierFlyweight.messageSize());
-                    cachedFlyweight.wrap(cacheBuffer, 0);
-                    cache.add(cachedFlyweight);
-                    LOGGER.info("Replayed tier: tierId={}, tierName={}", cachedFlyweight.getTierId(), cachedFlyweight.getTierNameAsString());
-                } catch (Exception e) {
-                    LOGGER.error("Error decoding tier: {}", e.getMessage(), e);
-                }
-            };
-            final IdleStrategy idleStrategy = new NoOpIdleStrategy();
-            while (running) {
-                subscription.poll(fragmentAssembler, 10);
-                Thread.yield();
-                ringBuffer.read((msgTypeId, buffer, index, length2) -> {
-                    // Read message from ring buffer and forward to publication
-                    while (publication.offer(buffer, index, length2) < 0) {
-                        idleStrategy.idle(); // apply back pressure handling
-                    }
-                }, 1);
+        FragmentHandler fragmentAssembler = (buffer1, offset, length1, header) -> {
+            try {
+                LOGGER.debug("Received message: length={}, offset={}", length1, offset);
+                flyweight.wrap(buffer1, offset);
+                flyweight.validate();
+                LOGGER.debug("Validated tier: tierId={}, tierName={}", flyweight.getTierId(), flyweight.getTierNameAsString());
+                ClientTierFlyweight cachedFlyweight = new ClientTierFlyweight();
+                MutableDirectBuffer cacheBuffer = new UnsafeBuffer(ByteBuffer.allocateDirect(ClientTierFlyweight.messageSize()));
+                cacheBuffer.putBytes(0, buffer1, offset, ClientTierFlyweight.messageSize());
+                cachedFlyweight.wrap(cacheBuffer, 0);
+                cache.add(cachedFlyweight);
+                LOGGER.info("Replayed tier: tierId={}, tierName={}", cachedFlyweight.getTierId(), cachedFlyweight.getTierNameAsString());
+            } catch (Exception e) {
+                LOGGER.error("Error decoding tier: {}", e.getMessage(), e);
             }
+        };
+
+        this.quoteSub = aeron.addSubscription(AeronConfigs.LIVE_CHANNEL,
+                StreamId.RAW_QUOTE.getCode(),
+                image -> LOGGER.info("Image available: sessionId={}, channel={}, streamId={}",
+                        image.sessionId(), image.sourceIdentity(), image.subscription().streamId()),
+                image -> LOGGER.warn("Image unavailable: sessionId={}, channel={}, streamId={}",
+                        image.sessionId(), image.sourceIdentity(), image.subscription().streamId())
+        );
+        FragmentHandler quoteFragmentHandler = (buf, offset, len, hdr) -> consumeQuotes(buf, offset);
+        final IdleStrategy idleStrategy = new NoOpIdleStrategy();
+        while (running) {
+            subscription.poll(fragmentAssembler, 10);
+            quoteSub.poll(quoteFragmentHandler, 10);
+            Thread.yield();
+            ringBuffer.read((msgTypeId, buffer, index, length2) -> {
+                // Read message from ring buffer and forward to publication
+                while (publication.offer(buffer, index, length2) < 0) {
+                    idleStrategy.idle(); // apply back pressure handling
+                }
+            }, 1);
         }
 
         for (long recId : findRecordingsWithData(archive, REPLAY_CHANNEL, StreamId.CONFIG_STREAM.getCode())) {
@@ -189,6 +212,34 @@ public enum AeronService {
         }
 
         return List.of();
+    }
+
+    private void consumeQuotes(DirectBuffer buf, int offset) {
+        quoteView.wrap(buf, offset + MessageHeaderDecoder.ENCODED_LENGTH);
+        quoteView.getSymbol(symbolMutableString.init());
+        long timestamp = quoteView.priceCreationTimestamp();
+        long tenor = quoteView.getTenor();
+        long valueDate = quoteView.getValueDate();
+        long clientTier = quoteView.getClientTier();
+
+        while (quoteView.getRung().hasNext()) {
+            QuoteMessageDecoder.RungDecoder nextRung = quoteView.getRung().next();
+            double mid = (nextRung.bid() + nextRung.ask()) / 2.0;
+            String symbol = symbolMutableString.toString();
+            MarketDataTick marketDataTick;
+            if (latestTicks.containsKey(symbol)) {
+                marketDataTick = latestTicks.get(symbol);
+                marketDataTick.setAsk(nextRung.ask());
+                marketDataTick.setBid(nextRung.bid());
+                marketDataTick.setMid(mid);
+                marketDataTick.setValueDateEpoch(valueDate);
+                marketDataTick.setTimestamp(timestamp);
+            } else {
+                marketDataTick = new MarketDataTick(symbol, mid, nextRung.bid(), nextRung.ask(), valueDate, timestamp);
+                latestTicks.put(symbol, marketDataTick);
+            }
+        }
+
     }
 
     public List<ClientTierFlyweight> getCachedTiers() {
@@ -255,5 +306,9 @@ public enum AeronService {
         }
 
         replayTiers();
+    }
+
+    public Collection<MarketDataTick> getPrices() {
+        return latestTicks.values();
     }
 }

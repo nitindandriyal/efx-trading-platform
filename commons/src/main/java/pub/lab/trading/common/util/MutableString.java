@@ -46,6 +46,11 @@ public class MutableString implements CharSequence, Appendable {
     }
 
     @Override
+    public String toString() {
+        return this.builder.toString();
+    }
+
+    @Override
     public int length() {
         return builder.length();
     }
